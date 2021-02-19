@@ -46,6 +46,8 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         "matchms",
+        "community",
+        "networkx",
     ],
     extras_require={"dev": ["bump2version",
                             "isort>=4.2.5,<5",
