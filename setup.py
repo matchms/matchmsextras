@@ -6,20 +6,20 @@ from setuptools import setup
 here = os.path.abspath(os.path.dirname(__file__))
 
 version = {}
-with open(os.path.join(here, "matchms-extras", "__version__.py")) as f:
+with open(os.path.join(here, "matchms_extras", "__version__.py")) as f:
     exec(f.read(), version)
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
 setup(
-    name="matchms-extras",
+    name="matchms_extras",
     version=version["__version__"],
     description="Additional functionalities to be used with matchms",
     long_description=readme,
     author="Netherlands eScience Center",
     author_email="f.huber@esciencecenter.nl",
-    url="https://github.com/matchms/matchms-extras",
+    url="https://github.com/matchms/matchms_extras",
     packages=find_packages(exclude=['*tests*']),
     include_package_data=True,
     license="Apache Software License 2.0",
