@@ -49,6 +49,7 @@ setup(
         "spec2vec",
         "community",
         "networkx",
+        "pandas",
     ],
     extras_require={"dev": ["bump2version",
                             "isort>=4.2.5,<5",
