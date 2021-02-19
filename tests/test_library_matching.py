@@ -5,9 +5,9 @@ import pytest
 from matchms import Spectrum
 from spec2vec import Spec2Vec
 from spec2vec import SpectrumDocument
-#path_root = os.path.dirname(os.path.__file__)
+
 path_root = os.path.dirname(os.getcwd())
-sys.path.insert(0, os.path.join(path_root, "custom_functions"))
+sys.path.insert(0, os.path.join(path_root, "matchms-extras"))
 from custom_functions.library_search import library_matching
 
 
