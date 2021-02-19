@@ -46,6 +46,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         "matchms",
+        "spec2vec",
         "community",
         "networkx",
     ],
