@@ -1,4 +1,4 @@
-<img src="https://github.com/matchms/matchms_extras/blob/main/matchms_extras_logo.png" width="600">
+<img src="https://github.com/matchms/matchms_extras/blob/main/images/matchms_extras_logo.png" width="600">
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/matchms/matchms_extras/CI%20Build)
 ![GitHub](https://img.shields.io/github/license/matchms/matchms_extras)
