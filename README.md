@@ -7,6 +7,7 @@
 # matchms_extras
 
 Additional functionalities to be used with [matchms](https://github.com/matchms/matchms).
+
 Usually this is stuff which either in scope and/or in code quality and/or in degree of unit testing does not match the criteria we have for matchms.
 For producing the results shown in our [Spec2Vec article, PLoS Computational Biology, 2021](https://doi.org/10.1371/journal.pcbi.1008724) we used code from `matchms_extras 0.1.0`. To fully reproduce those results you can install this via `pip install matchms_extras==0.1.0`. For all other purposes we recommend using the latest release.
 
