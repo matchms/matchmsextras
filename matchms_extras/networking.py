@@ -9,58 +9,118 @@ from networkx.algorithms.flow import shortest_augmenting_path
 import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib
+from matchms import Scores
 
 # ----------------------------------------------------------------------------
 # ---------------- Graph / networking related functions ----------------------
 # ----------------------------------------------------------------------------
 
+def get_top_hits(scores, top_n: int = 25, search_by: str = "queries",
+                 spectrumid: str = "spectrumid"):
+    """Get top_n highest scores (and indices) for every entry."""
+    assert search_by in ["queries", "references"], \
+        "search_by must be 'queries' or 'references"
+    dimension = len(scores.references) if search_by=="references" else len(scores.queries)
+    similars_idx = np.zeros((dimension, top_n), dtype=int)
+    similars_scores = np.zeros((dimension, top_n))
+   
+    if search_by=="queries":
+        for i in range(dimension):
+            similars_idx[i, :] = scores.scores[:, i].argsort()[-top_n:][::-1]
+            similars_scores[i, :] = scores.scores[similars_idx[i, :], i]
+    elif search_by=="references":
+        for i in range(dimension):
+            similars_idx[i, :] = scores.scores[i, :].argsort()[-top_n:][::-1]
+            similars_scores[i, :] = scores.scores[i, similars_idx[i,:]]
+    return similars_idx, similars_scores
 
-def create_network(similars_idx,
-                   similars,
-                   max_links=10,
-                   cutoff=0.7,
-                   link_method='single'):
+
+def create_network(scores: Scores,
+                   spectrumid: str = "spectrumid",
+                   add_links_from_queries: bool = True,
+                   add_links_from_references: bool = False,
+                   max_links: int = 10,
+                   cutoff: float = 0.7,
+                   link_method: str = 'single'):
     """
     Function to create network from given top-n similarity values.
 
     Args:
     --------
-    similars_idx: numpy array
-        Array with indices of top-n most similar nodes.
-    similars: numpy array
-        Array with similarity values of top-n most similar nodes.
-    max_links: int
+    scores
+        Matchms Scores object containing all Spec2Vec similarities.
+    spectrumid
+        Unique intentifier for each spectrum in scores. Will also be used for
+        node names.
+    max_links
         Maximum number of links to add per node. Default = 10.
         Due to incoming links, total number of links per node can be higher.
-    cutoff: float
+    cutoff
         Threshold for given similarities. Edges/Links will only be made for
         similarities > cutoff. Default = 0.7.
-    link_method: str
+    link_method
         Chose between 'single' and 'mutual'. 'single will add all links based
         on individual nodes. 'mutual' will only add links if that link appears
         in the given top-n list for both nodes.
     """
-
-    dimension = similars_idx.shape[0]
+    set_q = {s.get(spectrumid) for s in scores.queries}
+    set_r = {s.get(spectrumid) for s in scores.references}
+    unique_ids = list(set_q.union(set_r))
+    dimension = len(unique_ids)
 
     # Initialize network graph, add nodes
     msnet = nx.Graph()
-    msnet.add_nodes_from(np.arange(0, dimension))
+    msnet.add_nodes_from(unique_ids)
 
-    # Add edges based on global threshold for weights
-    for i in range(0, dimension):
-        idx = np.where(similars[i, :] > cutoff)[0][:max_links]
-        if link_method == "single":
-            new_edges = [(i, int(similars_idx[i, x]), float(similars[i, x]))
-                         for x in idx if similars_idx[i, x] != i]
-        elif link_method == "mutual":
-            new_edges = [(i, int(similars_idx[i, x]), float(similars[i, x]))
-                         for x in idx
-                         if similars_idx[i, x] != i and i in similars_idx[x, :]
-                         ]
-        else:
-            print("Link method not kown")
-        msnet.add_weighted_edges_from(new_edges)
+    if add_links_from_queries:
+        similars_idx, similars_scores = get_top_hits(scores, top_n=max_links,
+                                                     search_by="queries",
+                                                     spectrumid=spectrumid)
+        
+        # Add edges based on global threshold (cutoff) for weights
+        for i, spec in enumerate(scores.queries):
+            query_id = spec.get(spectrumid)
+
+            idx = np.where(similars_scores[i, :] > cutoff)[0][:max_links]
+            if link_method == "single":
+                new_edges = [(query_id, scores.references[similars_idx[i, x]].get(spectrumid),
+                              float(similars_scores[i, x]))
+                             for x in idx if similars_idx[i, x] != i]
+            elif link_method == "mutual":
+                new_edges = [(query_id, scores.references[similars_idx[i, x]].get(spectrumid),
+                              float(similars_scores[i, x]))
+                             for x in idx
+                             if similars_idx[i, x] != i and i in similars_idx[x, :]
+                             ]
+            else:
+                raise ValueError("Link method not kown")
+
+            msnet.add_weighted_edges_from(new_edges)
+
+    if add_links_from_references:
+        similars_idx, similars_scores = get_top_hits(scores, top_n=max_links,
+                                                     search_by="references",
+                                                     spectrumid=spectrumid)
+        
+        # Add edges based on global threshold (cutoff) for weights
+        for i, spec in enumerate(scores.references):
+            ref_id = spec.get(spectrumid)
+
+            idx = np.where(similar_scores[i, :] > cutoff)[0][:max_links]
+            if link_method == "single":
+                new_edges = [(ref_id, scores.queries[similars_idx[i, x]].get(spectrumid),
+                              float(similars_scores[i, x]))
+                             for x in idx if similars_idx[i, x] != i]
+            elif link_method == "mutual":
+                new_edges = [(ref_id, scores.queries[similars_idx[i, x]].get(spectrumid),
+                              float(similars_scores[i, x]))
+                             for x in idx
+                             if similars_idx[i, x] != i and i in similars_idx[x, :]
+                             ]
+            else:
+                raise ValueError("Link method not kown")
+
+            msnet.add_weighted_edges_from(new_edges)
 
     return msnet
 
