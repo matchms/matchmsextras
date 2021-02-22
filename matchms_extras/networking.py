@@ -1,4 +1,6 @@
-# Import libraries
+"""
+Functions to create a graph/network from spectrum similarity scores
+"""
 import numpy as np
 import networkx as nx
 from community import community_louvain
