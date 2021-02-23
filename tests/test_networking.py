@@ -91,4 +91,4 @@ def test_create_network():
                       ('ref_spec_4', 'query_spec_2')]
     assert len(edges_list) == np.sum(scores.scores > cutoff), \
         "Expected different number of edges"
-    assert edges_list == expected_edges, "Expected different edges in graph"
+    assert np.all([(x in expected_edges) for x in edges_list]), "Expected different edges in graph"
