@@ -15,30 +15,31 @@ from matchms import Scores
 # ---------------- Graph / networking related functions ----------------------
 # ----------------------------------------------------------------------------
 
-def get_top_hits(scores, top_n: int = 25, search_by: str = "queries",
-                 spectrumid: str = "spectrumid"):
+def get_top_hits(scores, top_n: int = 25, search_by: str = "queries"):
     """Get top_n highest scores (and indices) for every entry."""
     assert search_by in ["queries", "references"], \
         "search_by must be 'queries' or 'references"
-    dimension = len(scores.references) if search_by=="references" else len(scores.queries)
-    similars_idx = np.zeros((dimension, top_n), dtype=int)
-    similars_scores = np.zeros((dimension, top_n))
+    dim1 = len(scores.references) if search_by=="references" else len(scores.queries)
+    dim2 = min(top_n, len(scores.queries) if search_by=="references" else len(scores.references))
+    similars_idx = np.zeros((dim1, dim2), dtype=int)
+    similars_scores = np.zeros((dim1, dim2))
    
     if search_by=="queries":
-        for i in range(dimension):
-            similars_idx[i, :] = scores.scores[:, i].argsort()[-top_n:][::-1]
+        for i in range(dim1):
+            similars_idx[i, :] = scores.scores[:, i].argsort()[::-1][:top_n]
             similars_scores[i, :] = scores.scores[similars_idx[i, :], i]
     elif search_by=="references":
-        for i in range(dimension):
-            similars_idx[i, :] = scores.scores[i, :].argsort()[-top_n:][::-1]
+        for i in range(dim1):
+            similars_idx[i, :] = scores.scores[i, :].argsort()[::-1][:top_n]
             similars_scores[i, :] = scores.scores[i, similars_idx[i,:]]
     return similars_idx, similars_scores
 
 
 def create_network(scores: Scores,
-                   spectrumid: str = "spectrumid",
+                   identifier: str = "spectrumid",
                    add_links_from_queries: bool = True,
                    add_links_from_references: bool = False,
+                   top_n: int = 20,
                    max_links: int = 10,
                    cutoff: float = 0.7,
                    link_method: str = 'single'):
@@ -49,9 +50,14 @@ def create_network(scores: Scores,
     --------
     scores
         Matchms Scores object containing all Spec2Vec similarities.
-    spectrumid
+    identifier
         Unique intentifier for each spectrum in scores. Will also be used for
         node names.
+    top_n
+        Consider edge between spectrumA and spectrumB if score falls into
+        top_n for spectrumA or spectrumB (link_method="single"), or into
+        top_n for spectrumA and spectrumB (link_method="mutual"). From those
+        potential links, only max_links will be kept, so top_n must be >= max_links.
     max_links
         Maximum number of links to add per node. Default = 10.
         Due to incoming links, total number of links per node can be higher.
@@ -63,8 +69,9 @@ def create_network(scores: Scores,
         on individual nodes. 'mutual' will only add links if that link appears
         in the given top-n list for both nodes.
     """
-    set_q = {s.get(spectrumid) for s in scores.queries}
-    set_r = {s.get(spectrumid) for s in scores.references}
+    assert top_n >= max_links, "top_n must be >= max_links"
+    set_q = {s.get(identifier) for s in scores.queries}
+    set_r = {s.get(identifier) for s in scores.references}
     unique_ids = list(set_q.union(set_r))
     dimension = len(unique_ids)
 
@@ -72,25 +79,26 @@ def create_network(scores: Scores,
     msnet = nx.Graph()
     msnet.add_nodes_from(unique_ids)
 
+    # Collect location and score of highest scoring candidates for queries and references
+    similars_idx_q, similars_scores_q = get_top_hits(scores, top_n=top_n,
+                                                     search_by="queries")
+    similars_idx_r, similars_scores_r = get_top_hits(scores, top_n=top_n,
+                                                     search_by="references")
     if add_links_from_queries:
-        similars_idx, similars_scores = get_top_hits(scores, top_n=max_links,
-                                                     search_by="queries",
-                                                     spectrumid=spectrumid)
-        
         # Add edges based on global threshold (cutoff) for weights
         for i, spec in enumerate(scores.queries):
-            query_id = spec.get(spectrumid)
+            query_id = spec.get(identifier)
 
-            idx = np.where(similars_scores[i, :] > cutoff)[0][:max_links]
+            idx = np.where(similars_scores_q[i, :] > cutoff)[0][:max_links]
             if link_method == "single":
-                new_edges = [(query_id, scores.references[similars_idx[i, x]].get(spectrumid),
-                              float(similars_scores[i, x]))
-                             for x in idx if similars_idx[i, x] != i]
+                new_edges = [(query_id, scores.references[similars_idx_q[i, x]].get(identifier),
+                              float(similars_scores_q[i, x]))
+                             for x in idx if similars_idx_q[i, x] != i]
             elif link_method == "mutual":
-                new_edges = [(query_id, scores.references[similars_idx[i, x]].get(spectrumid),
+                new_edges = [(query_id, scores.references[similars_idx_q[i, x]].get(identifier),
                               float(similars_scores[i, x]))
                              for x in idx
-                             if similars_idx[i, x] != i and i in similars_idx[x, :]
+                             if similars_idx_q[i, x] != i and i in similars_idx_r[x, :]
                              ]
             else:
                 raise ValueError("Link method not kown")
@@ -98,24 +106,20 @@ def create_network(scores: Scores,
             msnet.add_weighted_edges_from(new_edges)
 
     if add_links_from_references:
-        similars_idx, similars_scores = get_top_hits(scores, top_n=max_links,
-                                                     search_by="references",
-                                                     spectrumid=spectrumid)
-        
         # Add edges based on global threshold (cutoff) for weights
         for i, spec in enumerate(scores.references):
-            ref_id = spec.get(spectrumid)
+            ref_id = spec.get(identifier)
 
-            idx = np.where(similar_scores[i, :] > cutoff)[0][:max_links]
+            idx = np.where(similar_scores_r[i, :] > cutoff)[0][:max_links]
             if link_method == "single":
-                new_edges = [(ref_id, scores.queries[similars_idx[i, x]].get(spectrumid),
-                              float(similars_scores[i, x]))
-                             for x in idx if similars_idx[i, x] != i]
+                new_edges = [(ref_id, scores.queries[similars_idx_r[i, x]].get(identifier),
+                              float(similars_scores_r[i, x]))
+                             for x in idx if similars_idx_r[i, x] != i]
             elif link_method == "mutual":
-                new_edges = [(ref_id, scores.queries[similars_idx[i, x]].get(spectrumid),
-                              float(similars_scores[i, x]))
+                new_edges = [(ref_id, scores.queries[similars_idx_r[i, x]].get(identifier),
+                              float(similars_scores_r[i, x]))
                              for x in idx
-                             if similars_idx[i, x] != i and i in similars_idx[x, :]
+                             if similars_idx[i, x] != i and i in similars_idx_q[x, :]
                              ]
             else:
                 raise ValueError("Link method not kown")
