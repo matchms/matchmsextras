@@ -5,8 +5,8 @@ from matchms.similarity import FingerprintSimilarity
 from matchms_extras.networking import create_network, get_top_hits
 
 
-def create_dummy_scores():
-    # Create dummy spectrums
+def create_dummy_spectrum():
+    """Create dummy spectrums"""
     fingerprints1 = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [1, 0, 1]]
     fingerprints2 = [[1, 0, 1], [0, 1, 1], [1, 1, 1]]
     references = []
@@ -21,10 +21,25 @@ def create_dummy_scores():
                                 intensities=np.array([0.7, 0.2]),
                                 metadata={"spectrumid": 'query_spec_'+str(i),
                                           "fingerprint": np.array(fp)}))
+    return references, queries
+
+
+def create_dummy_scores():
+    references, queries = create_dummy_spectrum()
 
     # Create Scores object by calculating dice scores
     similarity_measure = FingerprintSimilarity("dice")
     scores = calculate_scores(references, queries, similarity_measure)
+    return scores
+
+
+def create_dummy_scores_symmetric():
+    references, queries = create_dummy_spectrum()
+    spectrums = references + queries
+
+    # Create Scores object by calculating dice scores
+    similarity_measure = FingerprintSimilarity("dice")
+    scores = calculate_scores(spectrums, spectrums, similarity_measure)
     return scores
 
 
@@ -72,6 +87,7 @@ def test_get_top_hits():
     assert np.allclose(idx_query, expected_idx_query[:,:2], atol=1e-5), \
         "Expected different selected indices"
 
+
 def test_create_network():
     """Test creating a graph from a Scores object"""
     cutoff=0.7
@@ -96,3 +112,64 @@ def test_create_network():
         "Expected different number of edges"
     assert np.all([(x[0] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
     assert np.all([(x[1] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
+
+
+def test_create_network_queries_reference_overlap():
+    """Test creating a graph from a Scores object"""
+    cutoff=0.7
+    scores = create_dummy_scores_symmetric()
+    msnet = create_network(scores, cutoff=cutoff)
+
+    edges_list = list(msnet.edges())
+    edges_list.sort()
+    nodes_without_edges = ['ref_spec_0',
+                           'ref_spec_1',
+                           'ref_spec_2']
+    assert len(edges_list) == 5, "Expected different number of edges"
+    assert np.all([(x[0] not in nodes_without_edges) for x in edges_list]), \
+        "Expected this node to have no edges"
+    assert np.all([(x[1] not in nodes_without_edges) for x in edges_list]), \
+        "Expected this node to have no edges"
+
+
+def test_create_network_queries_reference_overlap_higher_cutoff():
+    cutoff=0.9
+    scores = create_dummy_scores_symmetric()
+    msnet = create_network(scores, cutoff=cutoff)
+
+    edges_list = list(msnet.edges())
+    edges_list.sort()
+    assert len(edges_list) == 1, "Expected only one link"
+    assert edges_list[0][0] in ['query_spec_0', 'ref_spec_4'], \
+        "Expected different node to have a link"
+    assert edges_list[0][1] in ['query_spec_0', 'ref_spec_4'], \
+        "Expected different node to have a link"
+
+
+def test_create_network_mutual_method():
+    """Test creating a graph from a Scores object"""
+    cutoff=0.7
+    scores = create_dummy_scores_symmetric()
+    msnet = create_network(scores, cutoff=0.7, top_n=3,
+                           max_links=3, link_method="mutual")
+    edges_list = list(msnet.edges())
+    edges_list.sort()
+    assert len(edges_list) == 4, "Expected only four link"
+
+
+def test_create_network_max_links_1():
+    """Test creating a graph from a Scores object using max_links=1"""
+    cutoff=0.7
+    scores = create_dummy_scores_symmetric()
+    msnet = create_network(scores, cutoff=cutoff, max_links=1, link_method="single")
+
+    edges_list = list(msnet.edges())
+    edges_list.sort()
+    nodes_without_edges = ['ref_spec_0',
+                           'ref_spec_1',
+                           'ref_spec_2',]
+    assert len(edges_list) == 3, "Expected different number of edges"
+    assert np.all([(x[0] not in nodes_without_edges) for x in edges_list]), \
+        "Expected this node to have no edges"
+    assert np.all([(x[1] not in nodes_without_edges) for x in edges_list]), \
+        "Expected this node to have no edges"

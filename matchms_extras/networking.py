@@ -19,6 +19,9 @@ def get_top_hits(scores, top_n: int = 25, search_by: str = "queries"):
     """Get top_n highest scores (and indices) for every entry."""
     assert search_by in ["queries", "references"], \
         "search_by must be 'queries' or 'references"
+    if top_n < 2:
+        top_n = 2
+        print("Set top_n to minimum value of 2")
     dim1 = len(scores.references) if search_by=="references" else len(scores.queries)
     dim2 = min(top_n, len(scores.queries) if search_by=="references" else len(scores.references))
     similars_idx = np.zeros((dim1, dim2), dtype=int)
@@ -88,18 +91,17 @@ def create_network(scores: Scores,
         # Add edges based on global threshold (cutoff) for weights
         for i, spec in enumerate(scores.queries):
             query_id = spec.get(identifier)
-
-            idx = np.where(similars_scores_q[i, :] > cutoff)[0][:max_links]
+            
+            ref_candidates = np.array([scores.references[x].get(identifier)
+                                       for x in similars_idx_q[i, :]])
+            idx = np.where((similars_scores_q[i, :] >= cutoff) & (ref_candidates != query_id))[0][:max_links]
             if link_method == "single":
-                new_edges = [(query_id, scores.references[similars_idx_q[i, x]].get(identifier),
-                              float(similars_scores_q[i, x]))
-                             for x in idx if similars_idx_q[i, x] != i]
+                new_edges = [(query_id, ref_candidates[x],
+                              float(similars_scores_q[i, x])) for x in idx]
             elif link_method == "mutual":
-                new_edges = [(query_id, scores.references[similars_idx_q[i, x]].get(identifier),
-                              float(similars_scores[i, x]))
-                             for x in idx
-                             if similars_idx_q[i, x] != i and i in similars_idx_r[x, :]
-                             ]
+                new_edges = [(query_id, ref_candidates[x],
+                              float(similars_scores_q[i, x]))
+                             for x in idx if i in similars_idx_r[x, :]]
             else:
                 raise ValueError("Link method not kown")
 
@@ -110,17 +112,16 @@ def create_network(scores: Scores,
         for i, spec in enumerate(scores.references):
             ref_id = spec.get(identifier)
 
-            idx = np.where(similar_scores_r[i, :] > cutoff)[0][:max_links]
+            query_candidates = np.array([scores.queries[x].get(identifier)
+                                         for x in similars_idx_r[i, :]])
+            idx = np.where((similars_scores_r[i, :] >= cutoff) & (query_candidates != ref_id))[0][:max_links]
             if link_method == "single":
-                new_edges = [(ref_id, scores.queries[similars_idx_r[i, x]].get(identifier),
-                              float(similars_scores_r[i, x]))
-                             for x in idx if similars_idx_r[i, x] != i]
+                new_edges = [(ref_id, query_candidates[x],
+                              float(similars_scores_r[i, x])) for x in idx]
             elif link_method == "mutual":
-                new_edges = [(ref_id, scores.queries[similars_idx_r[i, x]].get(identifier),
-                              float(similars_scores_r[i, x]))
-                             for x in idx
-                             if similars_idx[i, x] != i and i in similars_idx_q[x, :]
-                             ]
+                new_edges = [(ref_id, query_candidates[x],
+                              float(similars_scores_r[i, x])) for x in idx
+                             if i in similars_idx_q[x, :]]
             else:
                 raise ValueError("Link method not kown")
 
