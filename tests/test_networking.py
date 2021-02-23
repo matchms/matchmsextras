@@ -112,6 +112,10 @@ def test_create_network():
         "Expected different number of edges"
     assert np.all([(x[0] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
     assert np.all([(x[1] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
+    assert msnet.get_edge_data('ref_spec_4', 'query_spec_0')["weight"] == 1, \
+        "Expected different edge weight"
+    assert msnet.get_edge_data('ref_spec_3', 'query_spec_2')["weight"] == 0.8, \
+        "Expected different edge weight"
 
 
 def test_create_network_queries_reference_overlap():
