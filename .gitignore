@@ -1,0 +1,3 @@
+dist/
+matchms_extras.egg-info/
+matchms_extras/__pycache__/
