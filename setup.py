@@ -47,7 +47,7 @@ setup(
     install_requires=[
         "matchms",
         "spec2vec",
-        "community",
+        "python-louvain",
         "networkx",
         "pandas",
     ],
