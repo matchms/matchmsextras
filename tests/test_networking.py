@@ -86,9 +86,13 @@ def test_create_network():
 
     edges_list = list(msnet.edges())
     edges_list.sort()
-    expected_edges = [('query_spec_0', 'ref_spec_4'),
-                      ('ref_spec_3', 'query_spec_2'),
-                      ('ref_spec_4', 'query_spec_2')]
+    nodes_with_edges = ['query_spec_0',
+                        'query_spec_2',
+                        'query_spec_2',
+                        'ref_spec_3',
+                        'ref_spec_4',
+                        'ref_spec_4']
     assert len(edges_list) == np.sum(scores.scores > cutoff), \
         "Expected different number of edges"
-    assert np.all([(x in expected_edges) for x in edges_list]), "Expected different edges in graph"
+    assert np.all([(x[0] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
+    assert np.all([(x[1] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
