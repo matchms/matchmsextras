@@ -12,13 +12,13 @@ def create_dummy_scores():
     references = []
     queries = []
     for i, fp in enumerate(fingerprints1):
-        references.append(Spectrum(mz=numpy.array([100, 200.]),
-                                   intensities=numpy.array([0.7, 0.2]),
+        references.append(Spectrum(mz=np.array([100, 200.]),
+                                   intensities=np.array([0.7, 0.2]),
                                    metadata={"spectrumid": 'ref_spec_'+str(i),
                                              "fingerprint": np.array(fp)}))
     for i, fp in enumerate(fingerprints2):
-        queries.append(Spectrum(mz=numpy.array([100, 200.]),
-                                intensities=numpy.array([0.7, 0.2]),
+        queries.append(Spectrum(mz=np.array([100, 200.]),
+                                intensities=np.array([0.7, 0.2]),
                                 metadata={"spectrumid": 'query_spec_'+str(i),
                                           "fingerprint": np.array(fp)}))
 
