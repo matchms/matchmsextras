@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Split network creation into `create_network` and `create_network_asymmetric` [#5](https://github.com/matchms/matchms_extras/pull/5)
+- Refactored `dilate_cluster` [#5](https://github.com/matchms/matchms_extras/pull/5)
+
 ## [0.2.0] - 2021-24-02
 
 ### Added
