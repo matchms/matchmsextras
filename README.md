@@ -2,7 +2,7 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/matchms/matchms_extras/CI%20Build)
 ![GitHub](https://img.shields.io/github/license/matchms/matchms_extras)
-[![PyPI](https://img.shields.io/pypi/v/ms2query)](https://pypi.org/project/matchms-extras/)
+[![PyPI](https://img.shields.io/pypi/v/matchms-extras)](https://pypi.org/project/matchms-extras/)
 
 # matchms_extras
 
