@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2021-24-02
+
 ### Added
 
 - Tests for `create_network` [#3](https://github.com/matchms/matchms_extras/pull/3)
@@ -15,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactored `create_network` function to work with queries != references [#3](https://github.com/matchms/matchms_extras/pull/3)
 
-## [0.1.0] - 2020-03-19
+## [0.1.0] - 2021-16-02
 
 ### Added
 
