@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 from matchms import Spectrum, calculate_scores
 from matchms.similarity import FingerprintSimilarity
-from matchms_extras.networking import create_network, get_top_hits
+from matchms_extras.networking import create_network, create_network_asymmetric
+from matchms_extras.networking import get_top_hits
 
 
 def create_dummy_spectrum():
@@ -88,11 +89,11 @@ def test_get_top_hits():
         "Expected different selected indices"
 
 
-def test_create_network():
-    """Test creating a graph from a Scores object"""
+def test_create_network_asymmetric():
+    """Test creating a graph from a non-symmetric Scores object"""
     cutoff=0.7
     scores = create_dummy_scores()
-    msnet = create_network(scores, cutoff=cutoff)
+    msnet = create_network_asymmetric(scores, cutoff=cutoff)
     nodes_list = list(msnet.nodes())
     nodes_list.sort()
     expected_nodes = ['query_spec_0', 'query_spec_1', 'query_spec_2',
@@ -118,8 +119,18 @@ def test_create_network():
         "Expected different edge weight"
 
 
-def test_create_network_queries_reference_overlap():
-    """Test creating a graph from a Scores object"""
+def test_create_network_symmetric_wrong_input():
+    """Test if function is used with non-symmetric scores object"""
+    scores = create_dummy_scores()
+    with pytest.raises(AssertionError) as msg:
+        _ = create_network(scores)
+
+    expected_msg = "Expected symmetric scores object with queries==references"
+    assert expected_msg in str(msg), "Expected different exception"
+
+
+def test_create_network_symmetric():
+    """Test creating a graph from a symmetric Scores object"""
     cutoff=0.7
     scores = create_dummy_scores_symmetric()
     msnet = create_network(scores, cutoff=cutoff)
@@ -136,7 +147,7 @@ def test_create_network_queries_reference_overlap():
         "Expected this node to have no edges"
 
 
-def test_create_network_queries_reference_overlap_higher_cutoff():
+def test_create_network_symmetric_higher_cutoff():
     cutoff=0.9
     scores = create_dummy_scores_symmetric()
     msnet = create_network(scores, cutoff=cutoff)
@@ -150,7 +161,7 @@ def test_create_network_queries_reference_overlap_higher_cutoff():
         "Expected different node to have a link"
 
 
-def test_create_network_mutual_method():
+def test_create_network_symmetric_mutual_method():
     """Test creating a graph from a Scores object"""
     cutoff=0.7
     scores = create_dummy_scores_symmetric()
@@ -161,7 +172,7 @@ def test_create_network_mutual_method():
     assert len(edges_list) == 4, "Expected only four link"
 
 
-def test_create_network_max_links_1():
+def test_create_network_symmetric_max_links_1():
     """Test creating a graph from a Scores object using max_links=1"""
     cutoff=0.7
     scores = create_dummy_scores_symmetric()
