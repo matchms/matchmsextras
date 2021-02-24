@@ -2,7 +2,9 @@ import pytest
 import numpy as np
 from matchms import Spectrum, calculate_scores
 from matchms.similarity import FingerprintSimilarity
-from matchms_extras.networking import create_network, get_top_hits
+from matchms_extras.networking import create_network, create_network_asymmetric
+from matchms_extras.networking import get_top_hits
+from matchms_extras.networking import dilate_cluster
 
 
 def create_dummy_spectrum():
@@ -43,56 +45,68 @@ def create_dummy_scores_symmetric():
     return scores
 
 
-def test_get_top_hits():
+def test_get_top_hits_by_references():
     scores = create_dummy_scores()
     idx_ref, scores_ref = get_top_hits(scores, top_n=10, search_by="references")
 
-    expected_scores_ref = np.array([[0.66666667, 0.5       , 0.        ],
-                                    [0.66666667, 0.5       , 0.        ],
-                                    [0.66666667, 0.66666667, 0.5       ],
-                                    [0.8       , 0.5       , 0.5       ],
-                                    [1.        , 0.8       , 0.5       ]])
-    expected_idx_ref = np.array([[0, 2, 1],
-                                 [1, 2, 0],
-                                 [1, 0, 2],
-                                 [2, 1, 0],
-                                 [0, 2, 1]])
-    assert np.allclose(scores_ref, expected_scores_ref, atol=1e-5), \
-        "Expected different selected scores"
-    assert np.allclose(idx_ref, expected_idx_ref, atol=1e-5), \
-        "Expected different selected indices"
-
-    idx_query, scores_query = get_top_hits(scores, top_n=10, search_by="queries")
-
-    expected_scores_query = np.array([[1.        , 0.66666667, 0.66666667, 0.5       , 0.        ],
-                                      [0.66666667, 0.66666667, 0.5       , 0.5       , 0.        ],
-                                      [0.8       , 0.8       , 0.5       , 0.5       , 0.5       ]])
-    expected_idx_query = np.array([[4, 2, 0, 3, 1],
-                                 [2, 1, 4, 3, 0],
-                                 [4, 3, 2, 1, 0]])
-    assert np.allclose(scores_query, expected_scores_query, atol=1e-5), \
-        "Expected different selected scores"
-    assert np.allclose(idx_query, expected_idx_query, atol=1e-5), \
-        "Expected different selected indices"
+    expected_scores_ref = {'ref_spec_0': np.array([0.66666667, 0.5       , 0.        ]),
+                           'ref_spec_1': np.array([0.66666667, 0.5       , 0.        ]),
+                           'ref_spec_2': np.array([0.66666667, 0.66666667, 0.5       ]),
+                           'ref_spec_3': np.array([0.8, 0.5, 0.5]),
+                           'ref_spec_4': np.array([1. , 0.8, 0.5])}
+    expected_idx_ref = {'ref_spec_0': np.array([0, 2, 1], dtype=np.int64),
+                        'ref_spec_1': np.array([1, 2, 0], dtype=np.int64),
+                        'ref_spec_2': np.array([1, 0, 2], dtype=np.int64),
+                        'ref_spec_3': np.array([2, 1, 0], dtype=np.int64),
+                        'ref_spec_4': np.array([0, 2, 1], dtype=np.int64)}
+    for key in scores_ref.keys():
+        assert np.allclose(scores_ref[key], expected_scores_ref[key], atol=1e-5), \
+            "Expected different selected scores"
+    for key in idx_ref.keys():
+        assert np.allclose(idx_ref[key], expected_idx_ref[key], atol=1e-5), \
+            "Expected different selected indices"
 
     # Test lower top_n
     idx_ref, scores_ref = get_top_hits(scores, top_n=2, search_by="references")
+    for key in scores_ref.keys():
+        assert np.allclose(scores_ref[key], expected_scores_ref[key][:2], atol=1e-5), \
+            "Expected different selected scores"
+    for key in idx_ref.keys():
+        assert np.allclose(idx_ref[key], expected_idx_ref[key][:2], atol=1e-5), \
+            "Expected different selected indices"
+
+def test_get_top_hits_by_queries():
+    scores = create_dummy_scores()
+    idx_query, scores_query = get_top_hits(scores, top_n=10, search_by="queries")
+
+    expected_scores_query = {'query_spec_0': np.array([1.        , 0.66666667, 0.66666667, 0.5       , 0.        ]),
+                             'query_spec_1': np.array([0.66666667, 0.66666667, 0.5       , 0.5       , 0.        ]),
+                             'query_spec_2': np.array([0.8, 0.8, 0.5, 0.5, 0.5])}
+    expected_idx_query = {'query_spec_0': np.array([4, 2, 0, 3, 1], dtype=np.int64),
+                          'query_spec_1': np.array([2, 1, 4, 3, 0], dtype=np.int64),
+                          'query_spec_2': np.array([4, 3, 2, 1, 0], dtype=np.int64)}
+    for key in scores_query.keys():
+        assert np.allclose(scores_query[key], expected_scores_query[key], atol=1e-5), \
+            "Expected different selected scores"
+    for key in idx_query.keys():
+        assert np.allclose(idx_query[key], expected_idx_query[key], atol=1e-5), \
+            "Expected different selected indices"
+
+    # Test lower top_n
     idx_query, scores_query = get_top_hits(scores, top_n=2, search_by="queries")
-    assert np.allclose(scores_ref, expected_scores_ref[:,:2], atol=1e-5), \
-        "Expected different selected scores"
-    assert np.allclose(idx_ref, expected_idx_ref[:,:2], atol=1e-5), \
-        "Expected different selected indices"
-    assert np.allclose(scores_query, expected_scores_query[:,:2], atol=1e-5), \
-        "Expected different selected scores"
-    assert np.allclose(idx_query, expected_idx_query[:,:2], atol=1e-5), \
-        "Expected different selected indices"
+    for key in scores_query.keys():
+        assert np.allclose(scores_query[key], expected_scores_query[key][:2], atol=1e-5), \
+            "Expected different selected scores"
+    for key in idx_query.keys():
+        assert np.allclose(idx_query[key], expected_idx_query[key][:2], atol=1e-5), \
+            "Expected different selected indices"
 
 
-def test_create_network():
-    """Test creating a graph from a Scores object"""
+def test_create_network_asymmetric():
+    """Test creating a graph from a non-symmetric Scores object"""
     cutoff=0.7
     scores = create_dummy_scores()
-    msnet = create_network(scores, cutoff=cutoff)
+    msnet = create_network_asymmetric(scores, cutoff=cutoff)
     nodes_list = list(msnet.nodes())
     nodes_list.sort()
     expected_nodes = ['query_spec_0', 'query_spec_1', 'query_spec_2',
@@ -118,8 +132,18 @@ def test_create_network():
         "Expected different edge weight"
 
 
-def test_create_network_queries_reference_overlap():
-    """Test creating a graph from a Scores object"""
+def test_create_network_symmetric_wrong_input():
+    """Test if function is used with non-symmetric scores object"""
+    scores = create_dummy_scores()
+    with pytest.raises(AssertionError) as msg:
+        _ = create_network(scores)
+
+    expected_msg = "Expected symmetric scores object with queries==references"
+    assert expected_msg in str(msg), "Expected different exception"
+
+
+def test_create_network_symmetric():
+    """Test creating a graph from a symmetric Scores object"""
     cutoff=0.7
     scores = create_dummy_scores_symmetric()
     msnet = create_network(scores, cutoff=cutoff)
@@ -136,7 +160,7 @@ def test_create_network_queries_reference_overlap():
         "Expected this node to have no edges"
 
 
-def test_create_network_queries_reference_overlap_higher_cutoff():
+def test_create_network_symmetric_higher_cutoff():
     cutoff=0.9
     scores = create_dummy_scores_symmetric()
     msnet = create_network(scores, cutoff=cutoff)
@@ -150,18 +174,26 @@ def test_create_network_queries_reference_overlap_higher_cutoff():
         "Expected different node to have a link"
 
 
-def test_create_network_mutual_method():
+def test_create_network_symmetric_mutual_method():
     """Test creating a graph from a Scores object"""
     cutoff=0.7
     scores = create_dummy_scores_symmetric()
-    msnet = create_network(scores, cutoff=0.7, top_n=3,
+    # change some scores
+    scores._scores[7, 6] = scores._scores[6, 7] = 0.85
+    scores._scores[7, 5] = scores._scores[5, 7] = 0.75
+    scores._scores[7, 3] = scores._scores[3, 7] = 0.7
+
+    msnet = create_network(scores, cutoff=cutoff, top_n=3,
                            max_links=3, link_method="mutual")
+    nodes_with_edges = ['query_spec_0', 'query_spec_1', 'query_spec_2', 'ref_spec_4']
     edges_list = list(msnet.edges())
     edges_list.sort()
-    assert len(edges_list) == 4, "Expected only four link"
+    assert len(edges_list) == 3, "Expected only four link"
+    assert np.all([(x[0] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
+    assert np.all([(x[1] in nodes_with_edges) for x in edges_list]), "Expected different edges in graph"
 
 
-def test_create_network_max_links_1():
+def test_create_network_symmetric_max_links_1():
     """Test creating a graph from a Scores object using max_links=1"""
     cutoff=0.7
     scores = create_dummy_scores_symmetric()
@@ -177,3 +209,17 @@ def test_create_network_max_links_1():
         "Expected this node to have no edges"
     assert np.all([(x[1] not in nodes_without_edges) for x in edges_list]), \
         "Expected this node to have no edges"
+
+
+def test_dilate_cluster():
+    # Create graph
+    cutoff=0.7
+    scores = create_dummy_scores_symmetric()
+    msnet = create_network(scores, cutoff=cutoff, top_n=3, max_links=3)
+    assert len(msnet.edges()) == 5, \
+        "Expected different number of edges before dilating"
+        
+    # Dilation step
+    msnet_dilated, links_added = dilate_cluster(msnet, scores)
+    assert len(msnet.edges()) == 12, \
+        "Expected different number of edges after dilating"

@@ -1,6 +1,7 @@
 """
 Functions to create a graph/network from spectrum similarity scores
 """
+from typing import Tuple
 import numpy as np
 import networkx as nx
 from community import community_louvain
@@ -15,13 +16,17 @@ from matchms import Scores
 # ---------------- Graph / networking related functions ----------------------
 # ----------------------------------------------------------------------------
 
-def get_top_hits(scores, top_n: int = 25, search_by: str = "queries"):
+def get_top_hits(scores, identifier: str = "spectrumid",
+                 top_n: int = 25, search_by: str = "queries") -> Tuple[dict, dict]:
     """Get top_n highest scores (and indices) for every entry.
 
     Args:
     --------
     scores
         Matchms Scores object containing all Spec2Vec similarities.
+    identifier
+        Unique intentifier for each spectrum in scores. Will also be used for
+        node names.
     top_n
         Return the indexes and scores for the top_n highest scores.
     search_by
@@ -34,32 +39,106 @@ def get_top_hits(scores, top_n: int = 25, search_by: str = "queries"):
     if top_n < 2:
         top_n = 2
         print("Set top_n to minimum value of 2")
-    dim1 = len(scores.references) if search_by=="references" else len(scores.queries)
-    dim2 = min(top_n, len(scores.queries) if search_by=="references" else len(scores.references))
-    similars_idx = np.zeros((dim1, dim2), dtype=int)
-    similars_scores = np.zeros((dim1, dim2))
+    #dim1 = len(scores.references) if search_by=="references" else len(scores.queries)
+    #dim2 = min(top_n, len(scores.queries) if search_by=="references" else len(scores.references))
+    
+    similars_idx = dict()
+    similars_scores = dict()
 
     if search_by=="queries":
-        for i in range(dim1):
-            similars_idx[i, :] = scores.scores[:, i].argsort()[::-1][:top_n]
-            similars_scores[i, :] = scores.scores[similars_idx[i, :], i]
+        for i, spec in enumerate(scores.queries):
+            spec_id = spec.get(identifier)
+            similars_idx[spec_id] = scores.scores[:, i].argsort()[::-1][:top_n]
+            similars_scores[spec_id] = scores.scores[similars_idx[spec_id], i]
     elif search_by=="references":
-        for i in range(dim1):
-            similars_idx[i, :] = scores.scores[i, :].argsort()[::-1][:top_n]
-            similars_scores[i, :] = scores.scores[i, similars_idx[i,:]]
+        for i, spec in enumerate(scores.references):
+            spec_id = spec.get(identifier)
+            similars_idx[spec_id] = scores.scores[i, :].argsort()[::-1][:top_n]
+            similars_scores[spec_id] = scores.scores[i, similars_idx[spec_id]]
     return similars_idx, similars_scores
 
 
 def create_network(scores: Scores,
                    identifier: str = "spectrumid",
-                   add_links_from_queries: bool = True,
-                   add_links_from_references: bool = False,
                    top_n: int = 20,
                    max_links: int = 10,
                    cutoff: float = 0.7,
                    link_method: str = 'single'):
     """
-    Function to create network from given top-n similarity values.
+    Function to create network from given top-n similarity values. Expects that
+    similarities given in scores are from an all-vs-all comparison including all
+    possible pairs.
+
+    Args:
+    --------
+    scores
+        Matchms Scores object containing all Spec2Vec similarities.
+    identifier
+        Unique intentifier for each spectrum in scores. Will also be used for
+        node names.
+    top_n
+        Consider edge between spectrumA and spectrumB if score falls into
+        top_n for spectrumA or spectrumB (link_method="single"), or into
+        top_n for spectrumA and spectrumB (link_method="mutual"). From those
+        potential links, only max_links will be kept, so top_n must be >= max_links.
+    max_links
+        Maximum number of links to add per node. Default = 10.
+        Due to incoming links, total number of links per node can be higher.
+    cutoff
+        Threshold for given similarities. Edges/Links will only be made for
+        similarities > cutoff. Default = 0.7.
+    link_method
+        Chose between 'single' and 'mutual'. 'single will add all links based
+        on individual nodes. 'mutual' will only add links if that link appears
+        in the given top-n list for both nodes.
+    """
+    assert top_n >= max_links, "top_n must be >= max_links"
+    assert np.all(scores.queries == scores.references), \
+        "Expected symmetric scores object with queries==references"
+    unique_ids = list({s.get(identifier) for s in scores.queries})
+    dimension = len(unique_ids)
+
+    # Initialize network graph, add nodes
+    msnet = nx.Graph()
+    msnet.add_nodes_from(unique_ids)
+
+    # Collect location and score of highest scoring candidates for queries and references
+    similars_idx, similars_scores = get_top_hits(scores, top_n=top_n,
+                                                 search_by="queries")
+
+    # Add edges based on global threshold (cutoff) for weights
+    for i, spec in enumerate(scores.queries):
+        query_id = spec.get(identifier)
+
+        ref_candidates = np.array([scores.references[x].get(identifier)
+                                   for x in similars_idx[query_id]])
+        idx = np.where((similars_scores[query_id] >= cutoff) & (ref_candidates != query_id))[0][:max_links]
+        if link_method == "single":
+            new_edges = [(query_id, str(ref_candidates[x]),
+                          float(similars_scores[query_id][x])) for x in idx]
+        elif link_method == "mutual":
+            new_edges = [(query_id, str(ref_candidates[x]),
+                          float(similars_scores[query_id][x]))
+                         for x in idx if i in similars_idx[ref_candidates[x]][:]]
+        else:
+            raise ValueError("Link method not kown")
+
+        msnet.add_weighted_edges_from(new_edges)
+
+    return msnet
+
+
+def create_network_asymmetric(scores: Scores,
+                              identifier: str = "spectrumid",
+                              add_links_from_queries: bool = True,
+                              add_links_from_references: bool = False,
+                              top_n: int = 20,
+                              max_links: int = 10,
+                              cutoff: float = 0.7,
+                              link_method: str = 'single'):
+    """
+    Function to create network from given top-n similarity values. Expects scores
+    object where queries != references.
 
     Args:
     --------
@@ -105,15 +184,15 @@ def create_network(scores: Scores,
             query_id = spec.get(identifier)
 
             ref_candidates = np.array([scores.references[x].get(identifier)
-                                       for x in similars_idx_q[i, :]])
-            idx = np.where((similars_scores_q[i, :] >= cutoff) & (ref_candidates != query_id))[0][:max_links]
+                                       for x in similars_idx_q[query_id]])
+            idx = np.where((similars_scores_q[query_id] >= cutoff) & (ref_candidates != query_id))[0][:max_links]
             if link_method == "single":
                 new_edges = [(query_id, ref_candidates[x],
-                              float(similars_scores_q[i, x])) for x in idx]
+                              float(similars_scores_q[query_id][x])) for x in idx]
             elif link_method == "mutual":
                 new_edges = [(query_id, ref_candidates[x],
-                              float(similars_scores_q[i, x]))
-                             for x in idx if i in similars_idx_r[x, :]]
+                              float(similars_scores_q[query_id][x]))
+                             for x in idx if i in similars_idx_r[ref_candidates[x]][:]]
             else:
                 raise ValueError("Link method not kown")
 
@@ -125,15 +204,15 @@ def create_network(scores: Scores,
             ref_id = spec.get(identifier)
 
             query_candidates = np.array([scores.queries[x].get(identifier)
-                                         for x in similars_idx_r[i, :]])
-            idx = np.where((similars_scores_r[i, :] >= cutoff) & (query_candidates != ref_id))[0][:max_links]
+                                         for x in similars_idx_r[ref_id]])
+            idx = np.where((similars_scores_r[ref_id] >= cutoff) & (query_candidates != ref_id))[0][:max_links]
             if link_method == "single":
                 new_edges = [(ref_id, query_candidates[x],
-                              float(similars_scores_r[i, x])) for x in idx]
+                              float(similars_scores_r[ref_id][x])) for x in idx]
             elif link_method == "mutual":
                 new_edges = [(ref_id, query_candidates[x],
-                              float(similars_scores_r[i, x])) for x in idx
-                             if i in similars_idx_q[x, :]]
+                              float(similars_scores_r[ref_id][x])) for x in idx
+                             if i in similars_idx_q[query_candidates[x]][:]]
             else:
                 raise ValueError("Link method not kown")
 
@@ -236,14 +315,15 @@ def weak_link_finder(graph, max_steps=1000, max_cuts=1):
     return proposed_cuts
 
 
-def dilate_cluster(graph_main,
-                   similars_idx,
-                   similars,
-                   max_cluster_size=100,
-                   min_cluster_size=10,
-                   max_per_node=1,
+def dilate_cluster(graph_main: nx.Graph,
+                   scores: Scores,
+                   identifier: str = "spectrumid",
+                   max_cluster_size: int = 100,
+                   min_cluster_size: int = 10,
+                   max_per_node: int = 1,
                    max_per_cluster=None,
-                   min_weight=0.5):
+                   min_weight: float = 0.5,
+                   top_n: int = 25):
     """ Add more links to clusters that are < min_cluster_size.
     This function is in particular made to avoid small remaining clusters or singletons.
 
@@ -254,28 +334,35 @@ def dilate_cluster(graph_main,
 
     Args:
     --------
-    graph_main: networkx graph
+    graph_main
         Graph, e.g. made using create_network() function. Based on networkx.
-    similars_idx: numpy array
-        Array with indices of top-n most similar nodes.
-    similars: numpy array
-        Array with similarity values of top-n most similar nodes.
-    max_cluster_size: int
+    scores
+        Matchms Scores object containing all Spec2Vec similarities.
+    identifier
+        Unique intentifier for each spectrum in scores. Will also be used for
+        node names.
+    max_cluster_size
         Maximum desired size of clusters. Default = 100.
-    min_cluster_size: int
+    min_cluster_size
         Minimum desired size of clusters. Default = 10.
-    max_per_node: int
+    max_per_node
         Only add the top max_addition ones per cluster. Default = 1.
     max_per_cluster: int, None
         Only add the top max_addition ones per cluster. Ignore if set to None. Default = None.
-    min_weight: float
+    min_weight
         Set minimum weight to be considered for making link. Default = 0.5.
+    top_n
+        Consider the top_n highest scores for addition during dilation step. Default is 25.
     """
 
     links_added = []
 
+    similars_idx, similars_scores = get_top_hits(scores, top_n=top_n,
+                                                 search_by="queries")
+
     # Split graph into separate clusters
-    graphs = list(nx.connected_component_subgraphs(graph_main))
+    graphs = [graph_main.subgraph(c).copy() for c in nx.connected_components(graph_main)]
+    #graphs = list(nx.connected_component_subgraphs(graph_main))
 
     for graph in graphs:
         cluster_size = len(graph.nodes)
@@ -287,11 +374,11 @@ def dilate_cluster(graph_main,
                 nodes_connected = []
                 for key in graph[ID].keys():
                     nodes_connected.append(key)
-
+                similars_identifiers = [scores.queries[x].get(identifier) for x in similars_idx[ID]]
                 potential_new_links = [(i, x)
-                                       for i, x in enumerate(similars_idx[ID])
+                                       for i, x in enumerate(similars_identifiers)
                                        if x not in nodes_connected and x != ID]
-                best_score_arr = similars[ID][[
+                best_score_arr = similars_scores[ID][[
                     x[0] for x in potential_new_links
                 ]]
                 select = np.where(
@@ -698,21 +785,22 @@ def evaluate_clusters(graph_main, m_sim_ref):
     return cluster_data
 
 
-def evaluate_clusters_louvain(graph_main, m_sim_ref, resolution=1.0):
+def evaluate_clusters_louvain(graph_main: nx.Graph,
+                              reference_scores: pd.DataFrame, resolution: float = 1.0):
     """ Cluster given network using Louvain algorithm.
     Then evaluate clusters of network based on given reference matrix.
 
     Args:
     -------
-    graph_main: networkx.Graph
+    graph_main
         Graph, e.g. made using create_network() function. Based on networkx.
-    m_sim_ref: numpy array
-        2D array with all reference similarity values between all-vs-all nodes.
-    resolution: float
+    reference_scores
+        Pandas DataFrame with all reference similarity values between all-vs-all nodes.
+        Expects index and column values to be inchikeys14.
+    resolution
         Louvain algorithm resolution parameter. Will change size of communities.
         See also: https://python-louvain.readthedocs.io/en/latest/api.html Default=1.0
     """
-    plt.style.use('ggplot')
     # Find clusters using Louvain algorithm (and python-louvain library)
     communities = community_louvain.best_partition(graph_main,
                                                    weight='weight',
@@ -734,6 +822,7 @@ def evaluate_clusters_louvain(graph_main, m_sim_ref, resolution=1.0):
     for cluster in clusters:
         num_nodes.append(len(cluster))
         mean_mol_sims = []
+        # TODO: switch from new ids to location indices (node, cluster)
         for node in cluster:
             mean_mol_sims.append(m_sim_ref[node, cluster])
 
