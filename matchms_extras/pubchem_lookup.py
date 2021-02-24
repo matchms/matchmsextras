@@ -62,7 +62,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, formula_search=Fa
             spectrum.set("smiles", smiles_pubchem)
             return spectrum
 
-        elif verbose >= 2:
+        if verbose >= 2:
             print(f"No matches found for compound name: {compound_name}")
 
     # 2) Search for matching formula
@@ -88,7 +88,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, formula_search=Fa
                 spectrum.set("smiles", smiles_pubchem)
                 return spectrum
 
-            elif verbose >= 2:
+            if verbose >= 2:
                 print(f"No matches found for formula: {formula}")
 
     return spectrum
@@ -148,10 +148,7 @@ def likely_inchi_match(inchi_1, inchi_2, min_agreement=3):
         for i in range(min_agreement):
             agreement += (inchi_1_parts[i] == inchi_2_parts[i])
 
-    if agreement == min_agreement:
-        return True
-    else:
-        return False
+    return bool(agreement == min_agreement)
 
 
 def likely_inchikey_match(inchikey_1, inchikey_2, min_agreement=1):

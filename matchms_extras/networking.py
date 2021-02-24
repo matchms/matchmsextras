@@ -867,7 +867,6 @@ def evaluate_clusters_louvain(graph_main: nx.Graph,
 # --------------------- Graph related plotting functions ---------------------
 # ----------------------------------------------------------------------------
 def plots_cluster_evaluations(cluster_data_collection,
-                              m_sim_ref,
                               total_num_nodes,
                               size_bins,
                               labels,
@@ -879,8 +878,6 @@ def plots_cluster_evaluations(cluster_data_collection,
     --------
     cluster_data_collection:  list
         List of cluster data for all scenarios to be plotted.
-    m_sim_ref: numpy array
-        2D array with all reference similarity values between all-vs-all nodes.
     total_num_nodes: int
         Total number of nodes of graph.
     size_bins: list of int
