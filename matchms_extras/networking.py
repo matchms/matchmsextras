@@ -16,7 +16,19 @@ from matchms import Scores
 # ----------------------------------------------------------------------------
 
 def get_top_hits(scores, top_n: int = 25, search_by: str = "queries"):
-    """Get top_n highest scores (and indices) for every entry."""
+    """Get top_n highest scores (and indices) for every entry.
+
+    Args:
+    --------
+    scores
+        Matchms Scores object containing all Spec2Vec similarities.
+    top_n
+        Return the indexes and scores for the top_n highest scores.
+    search_by
+        Chose between 'queries' or 'references' which decides if the top_n matches
+        for every spectrum in scores.queries or in scores.references will be
+        collected and returned
+    """
     assert search_by in ["queries", "references"], \
         "search_by must be 'queries' or 'references"
     if top_n < 2:
@@ -26,7 +38,7 @@ def get_top_hits(scores, top_n: int = 25, search_by: str = "queries"):
     dim2 = min(top_n, len(scores.queries) if search_by=="references" else len(scores.references))
     similars_idx = np.zeros((dim1, dim2), dtype=int)
     similars_scores = np.zeros((dim1, dim2))
-   
+
     if search_by=="queries":
         for i in range(dim1):
             similars_idx[i, :] = scores.scores[:, i].argsort()[::-1][:top_n]
@@ -91,7 +103,7 @@ def create_network(scores: Scores,
         # Add edges based on global threshold (cutoff) for weights
         for i, spec in enumerate(scores.queries):
             query_id = spec.get(identifier)
-            
+
             ref_candidates = np.array([scores.references[x].get(identifier)
                                        for x in similars_idx_q[i, :]])
             idx = np.where((similars_scores_q[i, :] >= cutoff) & (ref_candidates != query_id))[0][:max_links]
