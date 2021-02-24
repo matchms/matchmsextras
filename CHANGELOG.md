@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2021-24-02
+
 ### Added
 
 - Split network creation into `create_network` and `create_network_asymmetric` [#5](https://github.com/matchms/matchms_extras/pull/5)
@@ -29,5 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - This is the initial version mostly taken from https://github.com/iomega/spec2vec_gnps_data_analysis
 
-[Unreleased]: https://github.com/matchms/matchms_extras/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/matchms/matchms_extras/compare/0.2.1...HEAD
+[0.2.1]: https://github.com/matchms/matchms_extras/compare/0.2.0...0.2.1
+[0.2.0]: https://github.com/matchms/matchms_extras/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/matchms/matchms_extras/releases/tag/0.1.0
