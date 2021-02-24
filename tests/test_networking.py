@@ -5,6 +5,7 @@ from matchms.similarity import FingerprintSimilarity
 from matchms_extras.networking import create_network, create_network_asymmetric
 from matchms_extras.networking import get_top_hits
 from matchms_extras.networking import dilate_cluster
+from matchms_extras.networking import extract_networking_metadata
 
 
 def create_dummy_spectrum():
@@ -17,12 +18,16 @@ def create_dummy_spectrum():
         references.append(Spectrum(mz=np.array([100, 200.]),
                                    intensities=np.array([0.7, 0.2]),
                                    metadata={"spectrumid": 'ref_spec_'+str(i),
-                                             "fingerprint": np.array(fp)}))
+                                             "fingerprint": np.array(fp),
+                                             "smiles": 'C1=CC=C2C(=C1)NC(=N2)C3=CC=CO3',
+                                             "parent_mass": 100+50*i}))
     for i, fp in enumerate(fingerprints2):
         queries.append(Spectrum(mz=np.array([100, 200.]),
                                 intensities=np.array([0.7, 0.2]),
                                 metadata={"spectrumid": 'query_spec_'+str(i),
-                                          "fingerprint": np.array(fp)}))
+                                          "fingerprint": np.array(fp),
+                                          "smiles": 'CC1=C(C=C(C=C1)NC(=O)N(C)C)Cl',
+                                          "parent_mass": 110+50*i}))
     return references, queries
 
 
@@ -218,8 +223,20 @@ def test_dilate_cluster():
     msnet = create_network(scores, cutoff=cutoff, top_n=3, max_links=3)
     assert len(msnet.edges()) == 5, \
         "Expected different number of edges before dilating"
-        
+
     # Dilation step
     msnet_dilated, links_added = dilate_cluster(msnet, scores)
     assert len(msnet.edges()) == 12, \
         "Expected different number of edges after dilating"
+
+
+def test_extract_networking_metadata():
+    references, queries = create_dummy_spectrum()
+    spectrums = references + queries
+
+    metadata = extract_networking_metadata(spectrums)
+    assert metadata.shape == (8, 3), "Expected different shape of table"
+    assert metadata.columns.to_list() == ['smiles', 'compound_name', 'parent_mass'], \
+        "Expected different columns"
+    assert metadata["parent_mass"].to_list() == [100, 150, 200, 250, 300, 110, 160, 210], \
+        "Expected different parent masses"

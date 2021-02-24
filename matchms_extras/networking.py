@@ -1,7 +1,7 @@
 """
 Functions to create a graph/network from spectrum similarity scores
 """
-from typing import Tuple
+from typing import List, Tuple
 import numpy as np
 import networkx as nx
 from community import community_louvain
@@ -10,7 +10,7 @@ from networkx.algorithms.flow import shortest_augmenting_path
 import pandas as pd
 from matplotlib import pyplot as plt
 import matplotlib
-from matchms import Scores
+from matchms import Spectrum, Scores
 
 # ----------------------------------------------------------------------------
 # ---------------- Graph / networking related functions ----------------------
@@ -63,7 +63,7 @@ def create_network(scores: Scores,
                    top_n: int = 20,
                    max_links: int = 10,
                    cutoff: float = 0.7,
-                   link_method: str = 'single'):
+                   link_method: str = 'single') -> nx.Graph:
     """
     Function to create network from given top-n similarity values. Expects that
     similarities given in scores are from an all-vs-all comparison including all
@@ -135,7 +135,7 @@ def create_network_asymmetric(scores: Scores,
                               top_n: int = 20,
                               max_links: int = 10,
                               cutoff: float = 0.7,
-                              link_method: str = 'single'):
+                              link_method: str = 'single') -> nx.Graph:
     """
     Function to create network from given top-n similarity values. Expects scores
     object where queries != references.
@@ -221,6 +221,33 @@ def create_network_asymmetric(scores: Scores,
     return msnet
 
 
+def extract_networking_metadata(spectrums: List[Spectrum],
+                                identifier: str = "spectrumid") -> pd.DataFrame:
+    """Collect metadata to later visualize and play with the network.
+    
+    Parameters
+    ----------
+    spectrums
+        List of spectrums
+
+    """
+    identifiers = []
+    smiles = []
+    compound_names = []
+    parent_masses = []
+    for spec in spectrums:
+        identifiers.append(spec.get(identifier))
+        smiles.append(spec.get("smiles"))
+        compound_names.append(spec.get("compound_name"))
+        parent_masses.append(spec.get("parent_mass"))
+        
+    metadata = pd.DataFrame({'smiles': smiles,
+                             'compound_name': compound_names,
+                             'parent_mass': parent_masses} )
+    metadata.index = identifiers
+    return metadata
+
+    
 def sample_cuts(graph, max_steps=1000, max_cuts=1):
     """ Function to help find critical links in the given graph.
     Critical links here are links which -once removed- would disconnect considerable
