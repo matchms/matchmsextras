@@ -1,10 +1,10 @@
-<img src="https://github.com/matchms/matchms_extras/blob/main/images/matchms_extras_logo.png" width="600">
+<img src="https://github.com/matchms/matchms_extras/blob/main/images/matchmsextras_logo.png" width="600">
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/matchms/matchms_extras/CI%20Build)
-![GitHub](https://img.shields.io/github/license/matchms/matchms_extras)
-[![PyPI](https://img.shields.io/pypi/v/matchms-extras)](https://pypi.org/project/matchms-extras/)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/matchms/matchmsextras/CI%20Build)
+![GitHub](https://img.shields.io/github/license/matchms/matchmsextras)
+[![PyPI](https://img.shields.io/pypi/v/matchmsextras)](https://pypi.org/project/matchmsextras/)
 
-# matchms_extras
+# matchmsextras
 
 Additional functionalities to be used with [matchms](https://github.com/matchms/matchms).
 
@@ -18,7 +18,7 @@ pip install matchms_extras
 ```
 
 ## Citing us
-If you use **matchms_extras** for your research, please cite the following references:
+If you use **matchmsextras** for your research, please cite the following references:
 
 Huber F, Ridder L, Verhoeven S, Spaaks JH, Diblen F, Rogers S, van der Hooft JJJ, (2021) "Spec2Vec: Improved mass spectral similarity scoring through learning of structural relationships". PLoS Comput Biol 17(2): e1008724. https://doi.org/10.1371/journal.pcbi.1008724
 
