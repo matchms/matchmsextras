@@ -11,5 +11,5 @@ authors:
 cff-version: "1.1.0"
 license: "Apache-2.0"
 message: "If you use this software, please cite it using these metadata."
-repository-code: "https://github.com/matchms/matchms_extras"
-title: matchms_extras
+repository-code: "https://github.com/matchms/matchmsextras"
+title: matchmsextras

@@ -7,8 +7,8 @@ from spec2vec import Spec2Vec
 from spec2vec import SpectrumDocument
 
 path_root = os.path.dirname(os.getcwd())
-sys.path.insert(0, os.path.join(path_root, "matchms_extras"))
-from matchms_extras.library_search import library_matching
+sys.path.insert(0, os.path.join(path_root, "matchmsextras"))
+from matchmsextras.library_search import library_matching
 
 
 def test_library_matching():

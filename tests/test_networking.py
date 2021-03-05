@@ -2,10 +2,10 @@ import pytest
 import numpy as np
 from matchms import Spectrum, calculate_scores
 from matchms.similarity import FingerprintSimilarity
-from matchms_extras.networking import create_network, create_network_asymmetric
-from matchms_extras.networking import get_top_hits
-from matchms_extras.networking import dilate_cluster
-from matchms_extras.networking import extract_networking_metadata
+from matchmsextras.networking import create_network, create_network_asymmetric
+from matchmsextras.networking import get_top_hits
+from matchmsextras.networking import dilate_cluster
+from matchmsextras.networking import extract_networking_metadata
 
 
 def create_dummy_spectrum():
