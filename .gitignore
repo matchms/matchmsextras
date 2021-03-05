@@ -1,4 +1,4 @@
 dist/
-matchms_extras.egg-info/
-matchms_extras/__pycache__/
+matchmsextras.egg-info/
+matchmsextras/__pycache__/
 tests/__pycache__/
