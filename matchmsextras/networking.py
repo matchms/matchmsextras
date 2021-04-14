@@ -41,7 +41,7 @@ def get_top_hits(scores, identifier: str = "spectrumid",
         print("Set top_n to minimum value of 2")
     #dim1 = len(scores.references) if search_by=="references" else len(scores.queries)
     #dim2 = min(top_n, len(scores.queries) if search_by=="references" else len(scores.references))
-    
+
     similars_idx = dict()
     similars_scores = dict()
 
@@ -224,7 +224,7 @@ def create_network_asymmetric(scores: Scores,
 def extract_networking_metadata(spectrums: List[Spectrum],
                                 identifier: str = "spectrumid") -> pd.DataFrame:
     """Collect metadata to later visualize and play with the network.
-    
+
     Parameters
     ----------
     spectrums
@@ -240,14 +240,14 @@ def extract_networking_metadata(spectrums: List[Spectrum],
         smiles.append(spec.get("smiles"))
         compound_names.append(spec.get("compound_name"))
         parent_masses.append(spec.get("parent_mass"))
-        
+
     metadata = pd.DataFrame({'smiles': smiles,
                              'compound_name': compound_names,
                              'parent_mass': parent_masses} )
     metadata.index = identifiers
     return metadata
 
-    
+
 def sample_cuts(graph, max_steps=1000, max_cuts=1):
     """ Function to help find critical links in the given graph.
     Critical links here are links which -once removed- would disconnect considerable
@@ -503,27 +503,29 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
     return graph_main, links_removed
 
 
-def add_intra_cluster_links(graph_main, m_sim, min_weight=0.5, max_links=20):
+def add_intra_cluster_links(graph_main, scores, identifier="spectrumid", min_weight=0.5, max_links=20):
     """ Add links within each separate cluster if weights above min_weight.
 
     Args:
     -------
     graph_main: networkx graph
         Graph, e.g. made using create_network() function. Based on networkx.
-    m_sim: numpy array
+    scores: matchms Scores
         2D array with all reference similarity values between all-vs-all nodes.
     min_weight: float
         Set minimum weight to be considered for making link. Default = 0.5.
     """
     # Split graph into separate clusters
-    graphs = list(nx.connected_component_subgraphs(graph_main))
-
+    graphs = [graph_main.subgraph(c).copy() for c in nx.connected_components(graph_main)]
+    node_to_ID = {s.get(identifier): i for i, s in enumerate(scores.queries)}
     for graph in graphs:
         nodes = list(graph.nodes)
         nodes0 = nodes.copy()
         for node in nodes:
             del nodes0[0]
-            weights = m_sim[node, nodes0]
+            ID1 = node_to_ID[node]
+            IDs2 = [node_to_ID[n] for n in nodes0]
+            weights = scores.scores[ID1, IDs2]
             weights_select = weights.argsort()[::-1][:max_links]
             weights_select = np.where(weights[weights_select] >= min_weight)[0]
             new_edges = [(node, nodes0[x], weights[x]) for x in weights_select]
