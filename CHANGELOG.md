@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+
+- Option to do PubChem search on both parent mass estimate and precursor_mz [#8](https://github.com/matchms/matchmsextras/pull/8)
+
 ## [0.2.1] - 2021-24-02
 
 ### Added
