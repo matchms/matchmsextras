@@ -5,7 +5,8 @@ import numpy as np
 from matchms.utils import is_valid_inchikey
 
 
-def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, formula_search=False,
+def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_mz=False,
+                            formula_search=False,
                             min_formula_length=6, formula_search_depth=25, verbose=1):
     """
 
@@ -48,10 +49,18 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, formula_search=Fa
         if likely_has_inchi(inchi):
             inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_inchi_match(results_pubchem, inchi,
                                                                                        verbose=verbose)
-        # 1b) Search for matching mass
+        # 1b) Search for matching parent mass
         if not likely_has_inchi(inchi) or inchikey_pubchem is None:
             inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem, parent_mass,
                                                                                       verbose=verbose)
+
+        # 1c) Search for matching precursor mass (optional)
+        if match_precursor_mz and inchikey_pubchem is None:
+            precursor_mz = spectrum.get("precursor_mz")
+            inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
+                                                                                      precursor_mz,
+                                                                                      verbose=verbose)
+
 
         if inchikey_pubchem is not None and inchi_pubchem is not None:
             logging.info("Matching compound name: %s", compound_name)
