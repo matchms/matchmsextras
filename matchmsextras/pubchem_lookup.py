@@ -51,7 +51,9 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                                                                                        verbose=verbose)
         # 1b) Search for matching parent mass
         if not likely_has_inchi(inchi) or inchikey_pubchem is None:
-            inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem, parent_mass,
+            inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
+                                                                                      parent_mass,
+                                                                                      given_mass="parent mass",
                                                                                       verbose=verbose)
 
         # 1c) Search for matching precursor mass (optional)
@@ -59,6 +61,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
             precursor_mz = spectrum.get("precursor_mz")
             inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
                                                                                       precursor_mz,
+                                                                                      given_mass="precursor mass",
                                                                                       verbose=verbose)
 
 
@@ -83,11 +86,21 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
 
             # 2a) Search for matching inchi
             if likely_has_inchi(inchi):
-                inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_inchi_match(results_pubchem, inchi)
-            # 2b) Search for matching mass
+                inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_inchi_match(results_pubchem, inchi,
+                                                                                           verbose=verbose)
+            # 2b) Search for matching parent mass
             if inchikey_pubchem is None:
-                inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem, parent_mass)
-
+                inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
+                                                                                          parent_mass,
+                                                                                          given_mass="parent mass",
+                                                                                          verbose=verbose)
+            # 2c) Search for matching precursor mass (optional)
+            if match_precursor_mz and inchikey_pubchem is None:
+                precursor_mz = spectrum.get("precursor_mz")
+                inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
+                                                                                          precursor_mz,
+                                                                                          given_mass="precursor mass",
+                                                                                          verbose=verbose)
             if inchikey_pubchem is not None and inchi_pubchem is not None:
                 logging.info("Matching formula: %s", formula)
                 if verbose >= 1:
@@ -281,6 +294,7 @@ def find_pubchem_inchi_match(results_pubchem,
 def find_pubchem_mass_match(results_pubchem,
                             parent_mass,
                             mass_tolerance=2.0,
+                            given_mass="parent mass",
                             verbose=1):
     """Searches pubmed matches for inchi match.
     Then check if inchi can be matched to (defective) input inchi.
@@ -296,6 +310,8 @@ def find_pubchem_mass_match(results_pubchem,
         Spectrum"s guessed parent mass.
     mass_tolerance: float
         Acceptable mass difference between query compound and pubchem result.
+    given_mass
+        String to specify the type of the given mass (e.g. "parent mass").
     """
     inchi_pubchem = None
     inchikey_pubchem = None
@@ -316,7 +332,7 @@ def find_pubchem_mass_match(results_pubchem,
                          str(np.round(pubchem_mass,1)),
                          str(np.round(parent_mass,1)))
             if verbose >= 1:
-                print(f"Matching molecular weight ({pubchem_mass:.1f} vs parent mass of {parent_mass:.1f})")
+                print(f"Matching molecular weight ({pubchem_mass:.1f} vs {given_mass} of {parent_mass:.1f})")
             break
 
     if not match_mass:
