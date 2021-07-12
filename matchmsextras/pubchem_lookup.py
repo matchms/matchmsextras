@@ -324,7 +324,7 @@ def find_pubchem_mass_match(results_pubchem,
         if smiles_pubchem is None:
             smiles_pubchem = result.canonical_smiles
 
-        pubchem_mass = results_pubchem[0].exact_mass
+        pubchem_mass = float(results_pubchem[0].exact_mass)
         match_mass = (np.abs(pubchem_mass - parent_mass) <= mass_tolerance)
 
         if match_mass:
