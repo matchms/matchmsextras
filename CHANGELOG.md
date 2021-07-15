@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2021-07-15
+
+## Fixed
+
+- Minor bug with string to float conversion for pubchem provided mass [#9](https://github.com/matchms/matchmsextras/pull/9)
+
 ## [0.2.2] - 2021-04-15
 
 ## Added
@@ -37,8 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - This is the initial version mostly taken from https://github.com/iomega/spec2vec_gnps_data_analysis
 
-[Unreleased]: https://github.com/matchms/matchmsextras/compare/0.2.2...HEAD
-[0.2.1]: https://github.com/matchms/matchmsextras/compare/0.2.1...0.2.2
+[Unreleased]: https://github.com/matchms/matchmsextras/compare/0.2.3...HEAD
+[0.2.3]: https://github.com/matchms/matchmsextras/compare/0.2.2...0.2.3
+[0.2.2]: https://github.com/matchms/matchmsextras/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/matchms/matchmsextras/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/matchms/matchmsextras/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/matchms/matchmsextras/releases/tag/0.1.0
