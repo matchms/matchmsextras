@@ -24,15 +24,17 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
     if spectrum_in is None:
         return None
 
+    if is_valid_inchikey(spectrum_in.get("inchikey")):
+        return spectrum_in
+
     spectrum = spectrum_in.clone()
-    if is_valid_inchikey(spectrum.get("inchikey")):
-        return spectrum
 
     def _plausible_name(compound_name):
         return (isinstance(compound_name, str) and len(compound_name) > 4)
 
     compound_name = spectrum.get("compound_name")
     if not _plausible_name(compound_name):
+        logger.info("No plausible compound name found (%s)", compound_name)
         return spectrum
 
     # Start pubchem search
@@ -47,6 +49,8 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                                           verbose=verbose)
 
     if len(results_pubchem) > 0:
+        logger.info("Found potential matches for compound name (%s) on PubChem",
+                   compound_name)
 
         # 1a) Search for matching inchi
         if likely_has_inchi(inchi):
@@ -80,13 +84,17 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
         if verbose >= 2:
             logger.info("No matches found for compound name: %s", compound_name)
 
+    else:
+        logger.info("No matches for compound name (%s) on PubChem",
+                   compound_name)
     # 2) Search for matching formula
     if formula_search and formula and len(formula) >= min_formula_length:
         results_pubchem = pubchem_formula_search(formula, formula_search_depth=formula_search_depth,
                                                  verbose=verbose)
 
         if len(results_pubchem) > 0:
-
+            logger.info("Found potential matches for formula (%s) on PubChem",
+                       formula)
             # 2a) Search for matching inchi
             if likely_has_inchi(inchi):
                 inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_inchi_match(results_pubchem, inchi,
@@ -115,6 +123,9 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
 
             if verbose >= 2:
                 logger.info("No matches found for formula: %s", formula)
+        else:
+            logger.info("No matches for formula (%s) on PubChem",
+                       formula)
 
     return spectrum
 
@@ -219,6 +230,8 @@ def pubchem_name_search(compound_name: str, name_search_depth=10, verbose=1):
     results_pubchem = pcp.get_compounds(compound_name,
                                         'name',
                                         listkey_count=name_search_depth)
+    if len(results_pubchem) == 0:
+        return []
     if verbose >=2:
         logger.info("Found at least %s compounds of that name on pubchem.", len(results_pubchem))
     return results_pubchem
