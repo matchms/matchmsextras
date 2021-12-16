@@ -5,6 +5,9 @@ import numpy as np
 from matchms.utils import is_valid_inchikey
 
 
+logger = logging.getLogger("matchms")
+
+
 def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_mz=False,
                             formula_search=False,
                             min_formula_length=6, formula_search_depth=25, verbose=1):
@@ -68,14 +71,14 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
         if inchikey_pubchem is not None and inchi_pubchem is not None:
             logging.info("Matching compound name: %s", compound_name)
             if verbose >= 1:
-                print(f"Matching compound name: {compound_name}")
+                logger.info("Matching compound name: %s", compound_name)
             spectrum.set("inchikey", inchikey_pubchem)
             spectrum.set("inchi", inchi_pubchem)
             spectrum.set("smiles", smiles_pubchem)
             return spectrum
 
         if verbose >= 2:
-            print(f"No matches found for compound name: {compound_name}")
+            logger.info("No matches found for compound name: %s", compound_name)
 
     # 2) Search for matching formula
     if formula_search and formula and len(formula) >= min_formula_length:
@@ -104,14 +107,14 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
             if inchikey_pubchem is not None and inchi_pubchem is not None:
                 logging.info("Matching formula: %s", formula)
                 if verbose >= 1:
-                    print(f"Matching formula: {formula}")
+                    logger.info("Matching formula: %s", formula)
                 spectrum.set("inchikey", inchikey_pubchem)
                 spectrum.set("inchi", inchi_pubchem)
                 spectrum.set("smiles", smiles_pubchem)
                 return spectrum
 
             if verbose >= 2:
-                print(f"No matches found for formula: {formula}")
+                logger.info("No matches found for formula: %s", formula)
 
     return spectrum
 
@@ -146,10 +149,10 @@ def likely_inchi_match(inchi_1, inchi_2, min_agreement=3):
         inchi to finally consider it a match. Default is min_agreement=3.
     """
     if min_agreement < 2:
-        print("Warning! 'min_agreement' < 2 has no discriminative power. Should be => 2.")
+        logger.warning("Warning! 'min_agreement' < 2 has no discriminative power. Should be => 2.")
     if min_agreement == 2:
-        print("Warning! 'min_agreement' == 2 has little discriminative power",
-              "(only looking at structure formula. Better use > 2.")
+        logger.warning("Warning! 'min_agreement' == 2 has little discriminative power",
+                       "(only looking at structure formula. Better use > 2.")
     agreement = 0
 
     # Remove spaces and '"' to account for different notations.
@@ -190,7 +193,7 @@ def likely_inchikey_match(inchikey_1, inchikey_2, min_agreement=1):
         inchikey to finally consider it a match. Default is min_agreement=1.
     """
     if min_agreement not in [1, 2, 3]:
-        print("Warning! 'min_agreement' should be 1, 2, or 3.")
+        logger.error("Warning! 'min_agreement' should be 1, 2, or 3.")
     agreement = 0
 
     # Harmonize strings
@@ -217,8 +220,7 @@ def pubchem_name_search(compound_name: str, name_search_depth=10, verbose=1):
                                         'name',
                                         listkey_count=name_search_depth)
     if verbose >=2:
-        print("Found at least", len(results_pubchem),
-              "compounds of that name on pubchem.")
+        logger.info("Found at least %s compounds of that name on pubchem.", len(results_pubchem))
     return results_pubchem
 
 
@@ -234,7 +236,8 @@ def pubchem_formula_search(compound_formula: str, formula_search_depth=25, verbo
         results_pubchem.append(result)
 
     if verbose >=2:
-        print(f"Found at least {len(results_pubchem)} compounds of with formula: {compound_formula}.")
+        logger.info("Found at least %s compounds of with formula: %s.",
+                    len(results_pubchem), compound_formula)
     return results_pubchem
 
 
@@ -277,7 +280,8 @@ def find_pubchem_inchi_match(results_pubchem,
         if match_inchi:
             logging.info("Matching inchi: %s", inchi)
             if verbose >= 1:
-                print(f"Found matching compound for inchi: {inchi} (Pubchem: {inchi_pubchem}")
+                logger.info("Found matching compound for inchi: %s (Pubchem: %s)",
+                            inchi, inchi_pubchem)
             break
 
     if not match_inchi:
@@ -286,7 +290,7 @@ def find_pubchem_inchi_match(results_pubchem,
         smiles_pubchem = None
 
         if verbose >= 2:
-            print("No matches found for inchi", inchi, "\n")
+            logger.info("No matches found for inchi %s.", inchi)
 
     return inchi_pubchem, inchikey_pubchem, smiles_pubchem
 
@@ -332,7 +336,8 @@ def find_pubchem_mass_match(results_pubchem,
                          str(np.round(pubchem_mass,1)),
                          str(np.round(parent_mass,1)))
             if verbose >= 1:
-                print(f"Matching molecular weight ({pubchem_mass:.1f} vs {given_mass} of {parent_mass:.1f})")
+                logger.info("Matching molecular weight (%s vs %s of %s)",
+                            pubchem_mass, given_mass, parent_mass)
             break
 
     if not match_mass:
@@ -341,6 +346,6 @@ def find_pubchem_mass_match(results_pubchem,
         smiles_pubchem = None
 
         if verbose >= 2:
-            print(f"No matches found for mass {parent_mass} Da")
+            logger.info("No matches found for mass %s Da", parent_mass)
 
     return inchi_pubchem, inchikey_pubchem, smiles_pubchem
