@@ -69,7 +69,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
 
 
         if inchikey_pubchem is not None and inchi_pubchem is not None:
-            logging.info("Matching compound name: %s", compound_name)
+            logger.info("Matching compound name: %s", compound_name)
             if verbose >= 1:
                 logger.info("Matching compound name: %s", compound_name)
             spectrum.set("inchikey", inchikey_pubchem)
@@ -105,7 +105,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                                                                                           given_mass="precursor mass",
                                                                                           verbose=verbose)
             if inchikey_pubchem is not None and inchi_pubchem is not None:
-                logging.info("Matching formula: %s", formula)
+                logger.info("Matching formula: %s", formula)
                 if verbose >= 1:
                     logger.info("Matching formula: %s", formula)
                 spectrum.set("inchikey", inchikey_pubchem)
@@ -278,7 +278,7 @@ def find_pubchem_inchi_match(results_pubchem,
                                          min_agreement=min_inchi_match)
 
         if match_inchi:
-            logging.info("Matching inchi: %s", inchi)
+            logger.info("Matching inchi: %s", inchi)
             if verbose >= 1:
                 logger.info("Found matching compound for inchi: %s (Pubchem: %s)",
                             inchi, inchi_pubchem)
@@ -332,9 +332,9 @@ def find_pubchem_mass_match(results_pubchem,
         match_mass = (np.abs(pubchem_mass - parent_mass) <= mass_tolerance)
 
         if match_mass:
-            logging.info("Matching molecular weight %s vs parent mass of %s",
-                         str(np.round(pubchem_mass,1)),
-                         str(np.round(parent_mass,1)))
+            logger.info("Matching molecular weight %s vs parent mass of %s",
+                        str(np.round(pubchem_mass,1)),
+                        str(np.round(parent_mass,1)))
             if verbose >= 1:
                 logger.info("Matching molecular weight (%s vs %s of %s)",
                             pubchem_mass, given_mass, parent_mass)
