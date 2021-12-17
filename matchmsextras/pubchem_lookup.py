@@ -10,7 +10,11 @@ logger = logging.getLogger("matchms")
 
 def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_mz=False,
                             formula_search=False,
-                            min_formula_length=6, formula_search_depth=25, verbose=1):
+                            mass_tolerance=2.0,
+                            allowed_differences=[(18.03, 0.01)],
+                            min_formula_length=6,
+                            formula_search_depth=25,
+                            verbose=2):
     """
 
     Parameters
@@ -61,6 +65,8 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
             inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
                                                                                       parent_mass,
                                                                                       given_mass="parent mass",
+                                                                                      mass_tolerance=mass_tolerance,
+                                                                                      allowed_differences=allowed_differences,
                                                                                       verbose=verbose)
 
         # 1c) Search for matching precursor mass (optional)
@@ -69,13 +75,12 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
             inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
                                                                                       precursor_mz,
                                                                                       given_mass="precursor mass",
+                                                                                      mass_tolerance=mass_tolerance,
+                                                                                      allowed_differences=allowed_differences,
                                                                                       verbose=verbose)
-
 
         if inchikey_pubchem is not None and inchi_pubchem is not None:
             logger.info("Matching compound name: %s", compound_name)
-            if verbose >= 1:
-                logger.info("Matching compound name: %s", compound_name)
             spectrum.set("inchikey", inchikey_pubchem)
             spectrum.set("inchi", inchi_pubchem)
             spectrum.set("smiles", smiles_pubchem)
@@ -104,6 +109,8 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                 inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
                                                                                           parent_mass,
                                                                                           given_mass="parent mass",
+                                                                                          mass_tolerance=mass_tolerance,
+                                                                                          allowed_differences=allowed_differences,
                                                                                           verbose=verbose)
             # 2c) Search for matching precursor mass (optional)
             if match_precursor_mz and inchikey_pubchem is None:
@@ -111,6 +118,8 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                 inchi_pubchem, inchikey_pubchem, smiles_pubchem = find_pubchem_mass_match(results_pubchem,
                                                                                           precursor_mz,
                                                                                           given_mass="precursor mass",
+                                                                                          mass_tolerance=mass_tolerance,
+                                                                                          allowed_differences=allowed_differences,
                                                                                           verbose=verbose)
             if inchikey_pubchem is not None and inchi_pubchem is not None:
                 logger.info("Matching formula: %s", formula)
@@ -232,8 +241,8 @@ def pubchem_name_search(compound_name: str, name_search_depth=10, verbose=1):
                                         listkey_count=name_search_depth)
     if len(results_pubchem) == 0:
         return []
-    if verbose >=2:
-        logger.info("Found at least %s compounds of that name on pubchem.", len(results_pubchem))
+
+    logger.debug("Found at least %s compounds of that name on pubchem.", len(results_pubchem))
     return results_pubchem
 
 
@@ -248,9 +257,8 @@ def pubchem_formula_search(compound_formula: str, formula_search_depth=25, verbo
         result = pcp.Compound.from_cid(sid['CID'])
         results_pubchem.append(result)
 
-    if verbose >=2:
-        logger.info("Found at least %s compounds of with formula: %s.",
-                    len(results_pubchem), compound_formula)
+    logger.debug("Found at least %s compounds of with formula: %s.",
+                 len(results_pubchem), compound_formula)
     return results_pubchem
 
 
@@ -310,8 +318,9 @@ def find_pubchem_inchi_match(results_pubchem,
 
 def find_pubchem_mass_match(results_pubchem,
                             parent_mass,
-                            mass_tolerance=2.0,
+                            mass_tolerance,
                             given_mass="parent mass",
+                            allowed_differences=[(18.03, 0.01)],
                             verbose=1):
     """Searches pubmed matches for inchi match.
     Then check if inchi can be matched to (defective) input inchi.
@@ -333,6 +342,8 @@ def find_pubchem_mass_match(results_pubchem,
     inchi_pubchem = None
     inchikey_pubchem = None
     smiles_pubchem = None
+    mass_difference = None
+    lowest_mass_difference = [np.inf, None]
 
     for result in results_pubchem:
         inchi_pubchem = '"' + result.inchi + '"'
@@ -342,15 +353,17 @@ def find_pubchem_mass_match(results_pubchem,
             smiles_pubchem = result.canonical_smiles
 
         pubchem_mass = float(results_pubchem[0].exact_mass)
-        match_mass = (np.abs(pubchem_mass - parent_mass) <= mass_tolerance)
+        mass_difference = np.abs(pubchem_mass - parent_mass)
+        if mass_difference < lowest_mass_difference[0]:
+            lowest_mass_difference[0] = mass_difference
+            lowest_mass_difference[1] = inchi_pubchem
+        match_mass = (mass_difference <= mass_tolerance)
+        for diff in allowed_differences:
+            match_mass = match_mass or np.isclose(mass_difference, diff[0], atol=diff[1])
 
         if match_mass:
-            logger.info("Matching molecular weight %s vs parent mass of %s",
-                        str(np.round(pubchem_mass,1)),
-                        str(np.round(parent_mass,1)))
-            if verbose >= 1:
-                logger.info("Matching molecular weight (%s vs %s of %s)",
-                            pubchem_mass, given_mass, parent_mass)
+            logger.info("Matching molecular weight (%s vs %s of %s)",
+                        pubchem_mass, given_mass, parent_mass)
             break
 
     if not match_mass:
@@ -358,7 +371,7 @@ def find_pubchem_mass_match(results_pubchem,
         inchikey_pubchem = None
         smiles_pubchem = None
 
-        if verbose >= 2:
-            logger.info("No matches found for mass %s Da", parent_mass)
+        logger.info("No matching molecular weight (best mass difference was %s for inchi: %s)",
+                    lowest_mass_difference[0], lowest_mass_difference[1])
 
     return inchi_pubchem, inchikey_pubchem, smiles_pubchem
