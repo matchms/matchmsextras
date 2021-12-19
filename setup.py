@@ -45,7 +45,7 @@ setup(
     test_suite="tests",
     python_requires='>=3.7',
     install_requires=[
-        "matchms>=0.8.0",
+        "matchms>=0.11.0",
         "spec2vec",
         "python-louvain",
         "networkx",
