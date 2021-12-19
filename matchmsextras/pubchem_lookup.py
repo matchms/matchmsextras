@@ -239,6 +239,10 @@ def pubchem_name_search(compound_name: str, name_search_depth=10, verbose=1):
     results_pubchem = pcp.get_compounds(compound_name,
                                         'name',
                                         listkey_count=name_search_depth)
+    if len(results_pubchem) == 0 and "_" in compound_name:
+        results_pubchem = pcp.get_compounds(compound_name.replace("_", " "),
+                                            'name',
+                                            listkey_count=name_search_depth)
     if len(results_pubchem) == 0:
         return []
 
