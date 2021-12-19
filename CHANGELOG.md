@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.3] - 2021-07-15
 
+### Added
+
+- `allowed_difference` argument for pubchem search to include known, common mass differences into the pubchem search (e.g. water or NH4) to compensate missing adduct information [#12](https://github.com/matchms/matchmsextras/pull/12)
+
+### Changed
+
+- exchange print against logging statements in pubchem search [#12](https://github.com/matchms/matchmsextras/pull/12)
+- raise needed matchms version to newest version 0.11.0 which includes logging [#12](https://github.com/matchms/matchmsextras/pull/12)
+
+
+## [0.2.3] - 2021-07-15
+
 ## Fixed
 
 - Minor bug with string to float conversion for pubchem provided mass [#9](https://github.com/matchms/matchmsextras/pull/9)
