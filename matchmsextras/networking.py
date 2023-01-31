@@ -16,7 +16,7 @@ from matchms import Spectrum, Scores
 # ---------------- Graph / networking related functions ----------------------
 # ----------------------------------------------------------------------------
 
-def get_top_hits(scores, identifier: str = "spectrumid",
+def get_top_hits(scores, identifier: str = "spectrum_id",
                  top_n: int = 25, search_by: str = "queries") -> Tuple[dict, dict]:
     """Get top_n highest scores (and indices) for every entry.
 
@@ -59,7 +59,7 @@ def get_top_hits(scores, identifier: str = "spectrumid",
 
 
 def create_network(scores: Scores,
-                   identifier: str = "spectrumid",
+                   identifier: str = "spectrum_id",
                    top_n: int = 20,
                    max_links: int = 10,
                    cutoff: float = 0.7,
@@ -129,7 +129,7 @@ def create_network(scores: Scores,
 
 
 def create_network_asymmetric(scores: Scores,
-                              identifier: str = "spectrumid",
+                              identifier: str = "spectrum_id",
                               add_links_from_queries: bool = True,
                               add_links_from_references: bool = False,
                               top_n: int = 20,
@@ -222,7 +222,7 @@ def create_network_asymmetric(scores: Scores,
 
 
 def extract_networking_metadata(spectrums: List[Spectrum],
-                                identifier: str = "spectrumid") -> pd.DataFrame:
+                                identifier: str = "spectrum_id") -> pd.DataFrame:
     """Collect metadata to later visualize and play with the network.
 
     Parameters
@@ -344,7 +344,7 @@ def weak_link_finder(graph, max_steps=1000, max_cuts=1):
 
 def dilate_cluster(graph_main: nx.Graph,
                    scores: Scores,
-                   identifier: str = "spectrumid",
+                   identifier: str = "spectrum_id",
                    max_cluster_size: int = 100,
                    min_cluster_size: int = 10,
                    max_per_node: int = 1,
@@ -503,7 +503,7 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
     return graph_main, links_removed
 
 
-def add_intra_cluster_links(graph_main, scores, identifier="spectrumid", min_weight=0.5, max_links=20):
+def add_intra_cluster_links(graph_main, scores, identifier="spectrum_id", min_weight=0.5, max_links=20):
     """ Add links within each separate cluster if weights above min_weight.
 
     Args:
