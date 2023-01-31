@@ -1,8 +1,8 @@
 <img src="https://github.com/matchms/matchmsextras/blob/main/images/matchmsextras_logo.png" width="600">
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/matchms/matchmsextras/CI%20Build)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/matchms/matchmsextras/CI_build.yml?branch=main)
 ![GitHub](https://img.shields.io/github/license/matchms/matchmsextras)
-[![PyPI](https://img.shields.io/pypi/v/matchmsextras)](https://pypi.org/project/matchmsextras/)
+[![PyPI](https://img.shields.io/pypi/v/matchmsextras?color=blue)](https://pypi.org/project/matchmsextras/)
 
 # matchmsextras
 
