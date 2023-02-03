@@ -2,7 +2,7 @@ import logging
 import re
 import pubchempy as pcp
 import numpy as np
-from matchms.utils import is_valid_inchikey
+from matchms.metadata_utils import is_valid_inchikey
 
 
 logger = logging.getLogger("matchms")
