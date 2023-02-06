@@ -69,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - This is the initial version mostly taken from https://github.com/iomega/spec2vec_gnps_data_analysis
 
-[Unreleased]: https://github.com/matchms/matchmsextras/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/matchms/matchmsextras/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/matchms/matchmsextras/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/matchms/matchmsextras/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/matchms/matchmsextras/compare/0.2.3...0.3.0
 [0.2.3]: https://github.com/matchms/matchmsextras/compare/0.2.2...0.2.3
