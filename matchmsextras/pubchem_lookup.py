@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 import pubchempy as pcp
 import numpy as np
 from matchms.metadata_utils import is_valid_inchikey
@@ -14,6 +15,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                             allowed_differences=[(18.03, 0.01)],
                             min_formula_length=6,
                             formula_search_depth=25,
+                            pause_per_request=0,
                             verbose=2):
     """
     Parameters
@@ -42,6 +44,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
         return spectrum
 
     # Start pubchem search
+    time.sleep(pause_per_request)
     inchi = spectrum.get("inchi")
     parent_mass = spectrum.get("parent_mass")
     if isinstance(parent_mass, np.ndarray):
