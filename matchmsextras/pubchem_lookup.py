@@ -16,18 +16,17 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
                             formula_search_depth=25,
                             verbose=2):
     """
-
     Parameters
     ----------
     spectrum_in
         Matchms type spectrum as input.
     name_search_depth: int
         How many of the most relevant name matches to explore deeper. Default = 10.
-
     """
     if spectrum_in is None:
         return None
 
+    # Only run search if no valid-looking inchikey is found
     if is_valid_inchikey(spectrum_in.get("inchikey")):
         return spectrum_in
 
@@ -36,6 +35,7 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
     def _plausible_name(compound_name):
         return (isinstance(compound_name, str) and len(compound_name) > 4)
 
+    # Only run search if (more or less) plausible name is found
     compound_name = spectrum.get("compound_name")
     if not _plausible_name(compound_name):
         logger.info("No plausible compound name found (%s)", compound_name)
@@ -92,12 +92,14 @@ def pubchem_metadata_lookup(spectrum_in, name_search_depth=10, match_precursor_m
     else:
         logger.info("No matches for compound name (%s) on PubChem",
                    compound_name)
+
     # 2) Search for matching formula
     if formula_search and formula and len(formula) >= min_formula_length:
         results_pubchem = pubchem_formula_search(formula, formula_search_depth=formula_search_depth,
                                                  verbose=verbose)
 
         if len(results_pubchem) > 0:
+            inchikey_pubchem = None
             logger.info("Found potential matches for formula (%s) on PubChem",
                        formula)
             # 2a) Search for matching inchi
@@ -152,12 +154,10 @@ def likely_has_inchi(inchi):
 
 def likely_inchi_match(inchi_1, inchi_2, min_agreement=3):
     """Try to match defective inchi to non-defective ones.
-
     Compares inchi parts seperately. Match is found if at least the first
     'min_agreement' parts are a good enough match.
     The main 'defects' this method accounts for are missing '-' in the inchi.
     In addition, differences between '-', '+', and '?'will be ignored.
-
     Parameters
     ----------
     inchi_1: str
@@ -198,10 +198,8 @@ def likely_inchi_match(inchi_1, inchi_2, min_agreement=3):
 
 def likely_inchikey_match(inchikey_1, inchikey_2, min_agreement=1):
     """Try to match inchikeys.
-
     Compares inchikey parts seperately. Match is found if at least the first
     'min_agreement' parts are a good enough match.
-
     Parameters
     ----------
     inchikey_1: str
@@ -272,10 +270,7 @@ def find_pubchem_inchi_match(results_pubchem,
                              verbose=1):
     """Searches pubmed matches for inchi match.
     Then check if inchi can be matched to (defective) input inchi.
-
-
     Outputs found inchi and found inchikey (will be None if none is found).
-
     Parameters
     ----------
     results_pubchem: List[dict]
@@ -328,10 +323,7 @@ def find_pubchem_mass_match(results_pubchem,
                             verbose=1):
     """Searches pubmed matches for inchi match.
     Then check if inchi can be matched to (defective) input inchi.
-
-
     Outputs found inchi and found inchikey (will be None if none is found).
-
     Parameters
     ----------
     results_pubchem: List[dict]
