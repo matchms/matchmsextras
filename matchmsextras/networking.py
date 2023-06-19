@@ -358,7 +358,7 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
     links_removed = []
 
     # Split graph into separate clusters
-    graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main))]
+    graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main)]
 
     for graph in graphs:
         cluster_size = len(graph.nodes)
@@ -380,7 +380,7 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
 
             # If link removal caused split of cluster:
             if not nx.is_connected(graph):
-                subgraphs = [graph.subgraph(c) for c in nx.connected_components(graph))]
+                subgraphs = [graph.subgraph(c) for c in nx.connected_components(graph)]
                 print("Getting from cluster with", len(graph.nodes),
                       "nodes, to clusters with",
                       [len(x.nodes) for x in subgraphs], "nodes.")
@@ -450,7 +450,7 @@ def split_cluster(graph_main,
     """
 
     # Split graph into separate clusters
-    graphs =  [graph_main.subgraph(c) for c in nx.connected_components(graph_main))]
+    graphs =  [graph_main.subgraph(c) for c in nx.connected_components(graph_main)]
 
     links_removed = []
     for i, graph in enumerate(graphs):
@@ -503,7 +503,7 @@ def split_cluster(graph_main,
                                 pair[m * 2], pair[m * 2 + 1])
 
                         # Check if created subclustes are big enough:
-                        subgraphs = [new_graph_testing.subgraph(c) for c in nx.connected_components(new_graph_testing))]
+                        subgraphs = [new_graph_testing.subgraph(c) for c in nx.connected_components(new_graph_testing)]
                         min_size_after_cutting.append(
                             min([len(x.nodes) for x in subgraphs]))
 
@@ -529,7 +529,7 @@ def split_cluster(graph_main,
                         # Remove edge from main graph:
                         graph_main.remove_edge(pair[m * 2], pair[m * 2 + 1])
                         links_removed.append((pair[m * 2], pair[m * 2 + 1]))
-                    subgraphs = [new_graph_testing.subgraph(c) for c in nx.connected_components(new_graph_testing))]
+                    subgraphs = [new_graph_testing.subgraph(c) for c in nx.connected_components(new_graph_testing)]
 
                     if int(pairs.shape[1] / 2) > 1:
                         print("Removed", int(pairs.shape[1] / 2), "edges:",
@@ -585,7 +585,7 @@ def refine_network(graph_main,
     -------
     """
     # Split graph into separate clusters
-    graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main))]
+    graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main)]
 
     links_removed = []
     links_added = []
@@ -607,7 +607,7 @@ def refine_network(graph_main,
         links_removed.extend(links)
 
         # Split updated graph into separate clusters
-        graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main))]
+        graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main)]
         cluster_max = np.max([len(x.nodes) for x in graphs])
         counter += 1
 
@@ -661,7 +661,7 @@ def evaluate_clusters(graph_main, m_sim_ref):
     """
 
     # Split graph into separate clusters
-    graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main))]
+    graphs = [graph_main.subgraph(c) for c in nx.connected_components(graph_main)]
 
     num_nodes = []
     num_edges = []
