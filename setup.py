@@ -49,7 +49,8 @@ setup(
         "spec2vec",
         "python-louvain",
         "networkx",
-        "pandas",
+        "pandas<2.0.0",
+        "pubchempy"
     ],
     extras_require={"dev": ["bump2version",
                             "isort>=4.2.5,<5",
