@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated pubchem_lookup. Speed up and improved reliability by only searching each unique compound name once.
+- Updated pubchem_lookup. Speed up and improved reliability by only searching each unique compound name once [#18](https://github.com/matchms/matchmsextras/pull/18). 
 
 ## [0.4.1] - 2023-02-06
 
