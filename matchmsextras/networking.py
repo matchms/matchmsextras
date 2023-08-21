@@ -392,7 +392,10 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
     return graph_main, links_removed
 
 
-def add_intra_cluster_links(graph_main, scores, identifier="spectrum_id", min_weight=0.5, max_links=20):
+def add_intra_cluster_links(graph_main,
+                            scores,
+                            score_name=None,
+                            identifier="spectrum_id", min_weight=0.5, max_links=20):
     """ Add links within each separate cluster if weights above min_weight.
 
     Args:
@@ -401,6 +404,8 @@ def add_intra_cluster_links(graph_main, scores, identifier="spectrum_id", min_we
         Graph, e.g. made using create_network() function. Based on networkx.
     scores: matchms Scores
         2D array with all reference similarity values between all-vs-all nodes.
+    score_name: str
+        Specify the score name if the Scores object contains different scores.
     min_weight: float
         Set minimum weight to be considered for making link. Default = 0.5.
     """
@@ -414,7 +419,7 @@ def add_intra_cluster_links(graph_main, scores, identifier="spectrum_id", min_we
             del nodes0[0]
             ID1 = node_to_ID[node]
             IDs2 = [node_to_ID[n] for n in nodes0]
-            weights = scores.scores[ID1, IDs2]
+            weights = np.array([scores.scores[ID1, i, score_name] for i in IDs2])
             weights_select = weights.argsort()[::-1][:max_links]
             weights_select = np.where(weights[weights_select] >= min_weight)[0]
             new_edges = [(node, nodes0[x], weights[x]) for x in weights_select]
