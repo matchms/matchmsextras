@@ -358,7 +358,9 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
     links_removed = []
 
     # Split graph into separate clusters
-    graphs = list(nx.connected_component_subgraphs(graph_main))
+    def graph_to_subgraphs(graph):
+        return [graph.subgraph(c).copy() for c in nx.connected_components(graph)]
+    graphs = graph_to_subgraphs(graph_main)
 
     for graph in graphs:
         cluster_size = len(graph.nodes)
@@ -380,7 +382,7 @@ def erode_clusters(graph_main, max_cluster_size=100, keep_weights_above=0.8):
 
             # If link removal caused split of cluster:
             if not nx.is_connected(graph):
-                subgraphs = list(nx.connected_component_subgraphs(graph))
+                subgraphs = graph_to_subgraphs(graph)
                 print("Getting from cluster with", len(graph.nodes),
                       "nodes, to clusters with",
                       [len(x.nodes) for x in subgraphs], "nodes.")
