@@ -711,7 +711,7 @@ def evaluate_clusters(graph_main, m_sim_ref):
 
 
 def evaluate_clusters_louvain(graph_main: nx.Graph,
-                              reference_scores: pd.DataFrame, resolution: float = 1.0):
+                              resolution: float = 1.0):
     """ Cluster given network using Louvain algorithm.
     Then evaluate clusters of network based on given reference matrix.
 
